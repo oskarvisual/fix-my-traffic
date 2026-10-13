@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "cityId": "lima",
+  "datasetVersion": 1,
+  "attribution": "© OpenStreetMap contributors",
+  "routes": [
+    {
+      "id": "r-l1",
+      "name": "Línea 1 del Metro de Lima",
+      "mode": "subway",
+      "ref": "L1",
+      "colour": "#00aa00",
+      "lines": [
+        [
+          [-76.93, -11.98],
+          [-76.98, -12.05],
+          [-77.01, -12.11],
+          [-76.95, -12.21]
+        ]
+      ]
+    },
+    {
+      "id": "r-metropolitano",
+      "name": "Metropolitano BRT",
+      "mode": "bus",
+      "ref": "BRT",
+      "colour": "#e6a100",
+      "lines": [
+        [
+          [-77.06, -11.95],
+          [-77.03, -12.05],
+          [-77.02, -12.12],
+          [-77.01, -12.17]
+        ]
+      ]
+    }
+  ]
+}

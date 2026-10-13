@@ -1,12 +1,27 @@
-import { balance } from '../simulation/config';
-
-export const currency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(value);
-export const gameDate = (month: number) => `Year ${Math.floor(month / 12) + 1} · Month ${(month % 12) + 1}`;
-export function congestionColor(score: number): string {
-  if (score < balance.congestion.freeFlow) return '#3fbd86';
-  if (score < balance.congestion.moderate) return '#e8cb55';
-  if (score < balance.congestion.heavy) return '#f08b45';
-  if (score < balance.congestion.severe) return '#ed5555';
-  return '#7d1d32';
+export function formatCurrency(amount: number): string {
+  if (Math.abs(amount) >= 1_000_000_000) {
+    return `$${(amount / 1_000_000_000).toFixed(2)}B`;
+  }
+  if (Math.abs(amount) >= 1_000_000) {
+    return `$${(amount / 1_000_000).toFixed(1)}M`;
+  }
+  if (Math.abs(amount) >= 1_000) {
+    return `$${(amount / 1_000).toFixed(0)}K`;
+  }
+  return `$${Math.round(amount)}`;
 }
-export const congestionLabel = (score: number) => score < .35 ? 'Free flowing' : score < .55 ? 'Moderate' : score < .75 ? 'Heavy' : score < .9 ? 'Severe' : 'Extreme';
+
+export function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function formatKm(km: number): string {
+  return `${km.toFixed(1)} km`;
+}
+
+export function formatPercent(val: number): string {
+  return `${Math.round(val * 100)}%`;
+}

@@ -1,42 +1,223 @@
 import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
-import { type MapGeoJSONFeature, type MapLayerMouseEvent } from 'maplibre-gl';
-import type { FeatureCollection, LineString } from 'geojson';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { RoadSegment } from '../domain/types';
-import { congestionColor } from '../ui/format';
+import type { RoadNetwork } from '../simulation/traffic/network';
+import type { TrafficState } from '../simulation/traffic/engine';
+import { CONGESTION_LEVELS } from '../config/traffic';
+import { env } from '../config/env';
 
-// Explicit worker URL keeps MapLibre functional in Vite's module-based dev server.
-maplibregl.setWorkerUrl(new URL('maplibre-gl/dist/maplibre-gl-worker.mjs', import.meta.url).toString());
+// Vite needs an explicit module-worker URL for MapLibre. Without it the map
+// container renders but the worker can fail to initialize in Chromium.
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
-interface TrafficMapProps { roads: RoadSegment[]; selectedRoadId?: string; onRoadSelect: (id: string) => void; }
+interface TrafficMapProps {
+  network: RoadNetwork;
+  traffic: TrafficState;
+  center: [number, number];
+  selectedSegmentIndex: number | null;
+  corridorIndices: number[];
+  onSelectSegment: (index: number) => void;
+}
 
-export function TrafficMap({ roads, selectedRoadId, onRoadSelect }: TrafficMapProps) {
-  const element = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | undefined>(undefined);
-  const initialRoads = useRef(roads);
-  const initialSelectedRoadId = useRef(selectedRoadId);
-  const onRoadSelectRef = useRef(onRoadSelect);
-  useEffect(() => { onRoadSelectRef.current = onRoadSelect; }, [onRoadSelect]);
+export const TrafficMap = ({
+  network,
+  traffic,
+  center,
+  selectedSegmentIndex,
+  corridorIndices,
+  onSelectSegment,
+}: TrafficMapProps) => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const isLoadedRef = useRef(false);
+  const onSelectSegmentRef = useRef(onSelectSegment);
   useEffect(() => {
-    if (!element.current || map.current) return;
-    const instance = new maplibregl.Map({ container: element.current, center: [-77.024, -12.091], zoom: 12.3, style: { version: 8, sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors' } }, layers: [{ id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.72, 'raster-saturation': -0.7, 'raster-brightness-max': 0.66 } }] } });
-    instance.on('load', () => {
-      instance.addSource('roads', { type: 'geojson', data: roadsGeoJson(initialRoads.current) });
-      instance.addLayer({ id: 'traffic-glow', type: 'line', source: 'roads', paint: { 'line-color': ['get', 'color'], 'line-width': 12, 'line-opacity': 0.25, 'line-blur': 3 } });
-      instance.addLayer({ id: 'traffic', type: 'line', source: 'roads', paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['==', ['get', 'id'], initialSelectedRoadId.current ?? ''], 7, 5], 'line-opacity': 0.96 } });
-      instance.on('click', 'traffic', (event: MapLayerMouseEvent) => { const feature = event.features?.[0] as MapGeoJSONFeature | undefined; const id = feature?.properties?.id; if (typeof id === 'string') onRoadSelectRef.current(id); });
-      instance.on('mouseenter', 'traffic', () => { instance.getCanvas().style.cursor = 'pointer'; });
-      instance.on('mouseleave', 'traffic', () => { instance.getCanvas().style.cursor = ''; });
-    });
-    map.current = instance;
-    return () => { instance.remove(); map.current = undefined; };
-  }, [onRoadSelect]);
-  useEffect(() => { const source = map.current?.getSource('roads') as maplibregl.GeoJSONSource | undefined; source?.setData(roadsGeoJson(roads)); }, [roads]);
-  useEffect(() => { const instance = map.current; if (instance?.getLayer('traffic')) instance.setPaintProperty('traffic', 'line-width', ['case', ['==', ['get', 'id'], selectedRoadId ?? ''], 7, 5]); }, [selectedRoadId]);
-  return <div ref={element} className="map" aria-label="Simulated traffic map of Lima" />;
-}
+    onSelectSegmentRef.current = onSelectSegment;
+  }, [onSelectSegment]);
 
-function roadsGeoJson(roads: RoadSegment[]): FeatureCollection<LineString> {
-  return { type: 'FeatureCollection', features: roads.map((road) => ({ type: 'Feature', properties: { id: road.id, color: congestionColor(road.congestion) }, geometry: { type: 'LineString', coordinates: road.coordinates } })) };
-}
+  const updateFeatureStates = (map: maplibregl.Map) => {
+    const draftSet = new Set(corridorIndices);
+    for (let i = 0; i < network.segments.length; i++) {
+      const congestion = traffic.congestion[i] ?? 0;
+      map.setFeatureState(
+        { source: 'roads', id: i },
+        {
+          congestion,
+          selected: selectedSegmentIndex === i,
+          inDraft: draftSet.has(i),
+        },
+      );
+    }
+  };
+
+  // Initialize Map
+  useEffect(() => {
+    if (!mapContainer.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainer.current,
+      style: env.mapStyleUrl,
+      center,
+      zoom: 12.5,
+      minZoom: 10,
+      maxZoom: 18,
+      attributionControl: { compact: true },
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    map.on('load', () => {
+      isLoadedRef.current = true;
+
+      // Construct GeoJSON FeatureCollection
+      const geojson: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
+        type: 'FeatureCollection',
+        features: network.segments.map((seg) => ({
+          type: 'Feature',
+          id: seg.index,
+          properties: {
+            index: seg.index,
+            id: seg.id,
+            name: seg.name,
+            roadType: seg.roadType,
+            lanes: seg.lanes,
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: seg.coordinates,
+          },
+        })),
+      };
+
+      map.addSource('roads', {
+        type: 'geojson',
+        data: geojson,
+        promoteId: 'index',
+      });
+
+      // Layer: Base Road Network (casing / width based on roadType)
+      map.addLayer({
+        id: 'roads-base',
+        type: 'line',
+        source: 'roads',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#1f2937',
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            ['match', ['get', 'roadType'], 'motorway', 3, 'trunk', 2.5, 'primary', 2, 1],
+            15,
+            ['match', ['get', 'roadType'], 'motorway', 8, 'trunk', 7, 'primary', 6, 'secondary', 4, 3],
+          ],
+        },
+      });
+
+      // Layer: Traffic Congestion Coloring
+      map.addLayer({
+        id: 'roads-traffic',
+        type: 'line',
+        source: 'roads',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': [
+            'case',
+            ['boolean', ['feature-state', 'selected'], false],
+            '#00f0ff',
+            ['boolean', ['feature-state', 'inDraft'], false],
+            '#38bdf8',
+            [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['feature-state', 'congestion'], 0],
+              0.0,
+              CONGESTION_LEVELS[0].color,
+              0.4,
+              CONGESTION_LEVELS[1].color,
+              0.6,
+              CONGESTION_LEVELS[2].color,
+              0.8,
+              CONGESTION_LEVELS[3].color,
+              1.0,
+              CONGESTION_LEVELS[4].color,
+            ],
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10,
+            ['match', ['get', 'roadType'], 'motorway', 2, 'trunk', 1.5, 1],
+            15,
+            [
+              'case',
+              [
+                'any',
+                ['boolean', ['feature-state', 'selected'], false],
+                ['boolean', ['feature-state', 'inDraft'], false],
+              ],
+              7,
+              ['match', ['get', 'roadType'], 'motorway', 6, 'trunk', 5, 'primary', 4, 'secondary', 3, 2],
+            ],
+          ],
+        },
+      });
+
+      // Hover / Click interaction
+      map.on('click', 'roads-traffic', (e: maplibregl.MapLayerMouseEvent) => {
+        if (e.features && e.features[0]) {
+          const index = Number(e.features[0].id);
+          onSelectSegmentRef.current(index);
+        }
+      });
+
+      map.on('mouseenter', 'roads-traffic', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.on('mouseleave', 'roads-traffic', () => {
+        map.getCanvas().style.cursor = '';
+      });
+
+      // Initial state sync
+      updateFeatureStates(map);
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      isLoadedRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [network, center]);
+
+  // Update feature-state when traffic, selection, or draft corridor changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isLoadedRef.current) return;
+    updateFeatureStates(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [traffic, selectedSegmentIndex, corridorIndices]);
+
+  return (
+    <div
+      ref={mapContainer}
+      // Do not rely on Tailwind utilities here: this project ships its own CSS.
+      // MapLibre needs a non-zero container size before it can render.
+      style={{ position: 'absolute', top: '68px', right: 0, bottom: 0, left: 0 }}
+      role="region"
+      aria-label="Simulated traffic map of Lima"
+    />
+  );
+};
