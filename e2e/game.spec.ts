@@ -1,0 +1,2 @@
+import { expect, test } from '@playwright/test';
+test('a minister can enter the playable Lima map', async ({ page }) => { await page.goto('/'); await page.getByRole('button', { name: /new game/i }).click(); await page.getByRole('button', { name: /become minister/i }).click(); await expect(page.getByText('Lima, Peru')).toBeVisible(); await expect(page.getByLabel('Simulated traffic map of Lima')).toBeVisible(); await expect(page.getByText('Choose a corridor')).toBeVisible(); });
