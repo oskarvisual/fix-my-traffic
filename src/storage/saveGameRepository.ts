@@ -30,6 +30,8 @@ export class SaveGameRepository {
 
 /** Upgrades older save schemas. Returns null for unsupported saves. */
 export function migrate(state: GameState): GameState | null {
-  if (state.schemaVersion === GAME_STATE_SCHEMA_VERSION) return state;
+  if (state.schemaVersion === GAME_STATE_SCHEMA_VERSION && (state.datasetVersion ?? 1) >= 2) {
+    return state;
+  }
   return null;
 }

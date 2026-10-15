@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRoadNetwork } from '../src/simulation/traffic/network';
+import { buildRoadNetwork, getAllAvenueSegments } from '../src/simulation/traffic/network';
 import { computeTraffic, createModifiers, applyCapacityChange, applyDemandChange } from '../src/simulation/traffic/engine';
 import { createNewGame, advanceDays, approveProject, type SimulationContext } from '../src/simulation/game';
 import type { CityRoadDataset } from '../src/data/cityDataset';
@@ -175,4 +175,68 @@ describe('Game Lifecycle & Project Flow', () => {
       expect(poorResult.reason).toBe('insufficientFunds');
     }
   });
+
+  it('supports contractor bidding with bribes and corruption gains', () => {
+    const game = createNewGame(
+      {
+        cityId: 'test-city',
+        datasetVersion: 1,
+        trafficProviderId: 'mock-test',
+        seed: 42,
+      },
+      ctx,
+    );
+
+    const initialPersonal = game.finance.personalBalance;
+    const initialCorruption = game.politics.corruption;
+
+    const approval = approveProject(game, ctx, {
+      typeId: 'brt',
+      indices: [0],
+      contractorBid: {
+        id: 'corrupt-1',
+        name: 'OdeVial S.A.',
+        country: 'Privado',
+        reputation: 'corrupt',
+        headline: 'Coima jugosa',
+        pros: ['Rápido'],
+        cons: ['Corrupto'],
+        costMultiplier: 1.15,
+        durationMultiplier: 1.0,
+        delayRisk: 0.2,
+        bribeOffer: 50_000,
+        corruptionRisk: 0.25,
+      },
+    });
+
+    expect(approval.ok).toBe(true);
+    if (!approval.ok) return;
+
+    expect(approval.state.finance.personalBalance).toBe(initialPersonal + 50_000);
+    expect(approval.state.politics.corruption).toBe(initialCorruption + 0.25);
+    expect(approval.state.projects[0].contractor?.name).toBe('OdeVial S.A.');
+  });
+
+  it('triggers general elections after 5 years (1826 days), rejecting ministers who allow congestion to grow', () => {
+    const game = createNewGame(
+      {
+        cityId: 'test-city',
+        datasetVersion: 1,
+        trafficProviderId: 'mock-test',
+        seed: 42,
+      },
+      ctx,
+    );
+
+    // After 5 years of natural demand growth without transit, voters vote the minister out
+    const termEndedGame = advanceDays(game, ctx, 1826);
+    expect(termEndedGame.status).toBe('gameOver');
+    expect(termEndedGame.gameOverReason).toBe('electionDefeat');
+  });
+
+  it('selects all matching segments of an avenue via getAllAvenueSegments', () => {
+    const segs = getAllAvenueSegments(network, 0);
+    expect(segs).toContain(0);
+  });
 });
+

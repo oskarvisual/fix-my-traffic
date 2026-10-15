@@ -26,7 +26,7 @@ export const CITY_CATALOG: CityCatalogEntry[] = [
     id: 'lima',
     name: 'Lima',
     country: 'Peru',
-    latestDatasetVersion: 1,
+    latestDatasetVersion: 2,
     population: {
       value: 9_569_468,
       source: 'INEI, Censos Nacionales 2017 (Lima Province + Constitutional Province of Callao)',

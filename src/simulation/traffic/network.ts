@@ -118,6 +118,28 @@ export function expandStreet(network: RoadNetwork, seed: number, maxLengthM: num
   return result;
 }
 
+/**
+ * Returns all segments belonging to the whole avenue / corridor of the seed segment.
+ * If the avenue has a name (e.g. "Avenida Brasil", "Avenida Arequipa"), all segments
+ * across both carriageways and blocks are returned. If unnamed, expands along connected segments.
+ */
+export function getAllAvenueSegments(network: RoadNetwork, seedIndex: number): number[] {
+  const seed = network.segments[seedIndex];
+  if (!seed) return [];
+  if (!seed.name || seed.name.trim().length === 0) {
+    return expandStreet(network, seedIndex, 12000);
+  }
+  const targetName = seed.name.trim().toLowerCase();
+  const matching: number[] = [];
+  for (let i = 0; i < network.segments.length; i++) {
+    const s = network.segments[i];
+    if (s.name && s.name.trim().toLowerCase() === targetName) {
+      matching.push(i);
+    }
+  }
+  return matching.length > 0 ? matching : [seedIndex];
+}
+
 export function corridorLengthKm(network: RoadNetwork, indices: readonly number[]): number {
   return indices.reduce((sum, i) => sum + (network.segments[i]?.lengthM ?? 0), 0) / 1000;
 }

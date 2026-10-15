@@ -1,6 +1,5 @@
 /**
- * Project type registry. Each type declares how it modifies traffic in each
- * phase. Adding BRT/metro later = adding a definition here + config.
+ * Project type registry. Each type declares how it modifies traffic in each phase.
  */
 import { PROJECT_CONFIG, type ProjectTypeConfig, type ProjectTypeId } from '../../config/projects';
 import { applyCapacityChange, applyDemandChange, type TrafficModifiers } from '../traffic/engine';
@@ -38,7 +37,7 @@ export function corridorCatchment(network: RoadNetwork, indices: readonly number
   return [...out];
 }
 
-/** Shared effect model for corridor projects (bike lane now; BRT later with own coefficients). */
+/** Shared effect model for corridor projects. */
 function corridorEffects(cfg: ProjectTypeConfig): ProjectTypeDefinition['applyEffects'] {
   return (project, ctx, modifiers) => {
     if (project.phase === 'construction') {
@@ -63,6 +62,26 @@ export const PROJECT_TYPES: Record<ProjectTypeId, ProjectTypeDefinition> = {
     id: 'bikeLane',
     config: PROJECT_CONFIG.bikeLane,
     applyEffects: corridorEffects(PROJECT_CONFIG.bikeLane),
+  },
+  brt: {
+    id: 'brt',
+    config: PROJECT_CONFIG.brt,
+    applyEffects: corridorEffects(PROJECT_CONFIG.brt),
+  },
+  elevatedMetro: {
+    id: 'elevatedMetro',
+    config: PROJECT_CONFIG.elevatedMetro,
+    applyEffects: corridorEffects(PROJECT_CONFIG.elevatedMetro),
+  },
+  subway: {
+    id: 'subway',
+    config: PROJECT_CONFIG.subway,
+    applyEffects: corridorEffects(PROJECT_CONFIG.subway),
+  },
+  roundabout: {
+    id: 'roundabout',
+    config: PROJECT_CONFIG.roundabout,
+    applyEffects: corridorEffects(PROJECT_CONFIG.roundabout),
   },
 };
 

@@ -7,6 +7,7 @@ import { TIME_CONFIG } from '../config/game';
 import {
   advanceDay,
   approveProject,
+  cancelProject,
   computeGameTraffic,
   type ApproveResult,
   type ProjectDraft,
@@ -138,6 +139,13 @@ export class GameSession {
       void this.save();
     }
     return result;
+  }
+
+  cancel(projectId: string): void {
+    const nextState = cancelProject(this.snapshot.state, projectId);
+    this.dirty = true;
+    this.emit({ state: nextState, traffic: computeGameTraffic(nextState, this.ctx) });
+    void this.save();
   }
 
   currentStateForSave(): GameState {
