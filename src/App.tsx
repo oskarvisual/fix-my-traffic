@@ -683,39 +683,21 @@ export default function App() {
           ))}
           {/* Dynamic Real Public Transit for the selected city */}
           {loadedCity.bundle.transit.routes.length > 0 && (
-            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #28372b' }}>
-              <p className="eyebrow" style={{ fontSize: '9px', marginBottom: '6px', color: '#94a99b' }}>
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #28372b' }}>
+              <p className="eyebrow" style={{ fontSize: '9px', marginBottom: '8px', color: '#94a99b' }}>
                 Red de Transporte ({loadedCity.bundle.roads.city.name})
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '150px', overflowY: 'auto' }}>
+              <div className="transit-legend-list">
                 {loadedCity.bundle.transit.routes.map((r) => (
-                  <span
-                    key={r.id}
-                    style={{
-                      fontSize: '11px',
-                      color: r.colour || '#00e676',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                    title={r.name}
-                  >
+                  <div key={r.id} className="transit-legend-item" title={r.name}>
                     <span
-                      style={{
-                        width: '12px',
-                        height: '3px',
-                        background: r.colour || '#00e676',
-                        display: 'inline-block',
-                        flexShrink: 0,
-                      }}
+                      className="transit-bar"
+                      style={{ background: r.colour || '#00e676' }}
                     />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {r.ref ? `[${r.ref}] ` : ''}{r.name}
+                    <span className="transit-text" style={{ color: r.colour || '#eef2eb' }}>
+                      {r.ref ? <b>[{r.ref}] </b> : ''}{r.name}
                     </span>
-                  </span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -723,10 +705,12 @@ export default function App() {
         </div>
 
         {/* Active Projects List */}
-        <div style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <div style={{ marginTop: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <p className="eyebrow" style={{ margin: 0 }}>{t('tools.activeProjects')}</p>
-            <span style={{ fontSize: '10px', color: '#88a090' }}>({state.projects.length})</span>
+            <span style={{ fontSize: '10px', color: '#88a090', background: '#132017', padding: '1px 6px', borderRadius: '10px' }}>
+              {state.projects.length}
+            </span>
           </div>
           {state.projects.length === 0 ? (
             <p className="muted">{t('tools.noProjects')}</p>
@@ -745,38 +729,44 @@ export default function App() {
                 <div
                   key={p.id}
                   style={{
-                    background: isSelected ? '#192b1f' : '#0e1711',
-                    border: isSelected ? '1px solid #00f0ff' : '1px solid #203025',
-                    padding: '8px 10px',
-                    marginBottom: '8px',
+                    background: isSelected ? '#1c2e22' : '#0e1711',
+                    border: isSelected ? '1px solid #00f0ff' : '1px solid #26382b',
+                    padding: '10px 12px',
+                    marginBottom: '10px',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
-                  title="Haz clic para seleccionar esta obra en el mapa"
+                  title="Haz clic para inspeccionar esta obra en el mapa"
                   onClick={() => {
                     if (projectSegmentIndices.length > 0) {
                       setSelectedRoadIndices(projectSegmentIndices);
                     }
                   }}
                 >
-                  <div style={{ fontWeight: 'bold', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{PROJECT_CONFIG[p.typeId]?.icon} {p.name}</span>
-                    <span style={{ fontSize: '10px', color: '#b8e86c' }}>{formatPercent(p.progress)}</span>
+                  <div style={{ fontWeight: 700, fontSize: '13px', lineHeight: 1.3, marginBottom: '6px' }}>
+                    {PROJECT_CONFIG[p.typeId]?.icon} {p.name}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#99aa9d', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{t(`project.phase.${p.phase}` as string)}</span>
-                    <span style={{ color: '#88a090', fontSize: '10px' }}>{p.contractor?.name ?? 'Ministerio'}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', color: '#fb923c', fontWeight: 600 }}>
+                      🚧 {t(`project.phase.${p.phase}` as string)}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#b8e86c', fontWeight: 800 }}>
+                      {formatPercent(p.progress)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#88a090', marginBottom: '8px' }}>
+                    Contratista: <span style={{ color: '#d1ded4' }}>{p.contractor?.name ?? 'Ministerio'}</span>
                   </div>
                   <button
                     className="advance"
                     style={{
                       width: '100%',
-                      marginTop: '6px',
-                      padding: '3px 6px',
-                      fontSize: '10px',
+                      padding: '5px 8px',
+                      fontSize: '11px',
                       borderColor: '#ef4444',
                       color: '#fca5a5',
+                      background: 'rgba(239, 68, 68, 0.08)',
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
