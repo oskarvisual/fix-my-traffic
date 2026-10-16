@@ -56,6 +56,19 @@ export interface NewsItem {
   params: Record<string, string | number>;
   projectId?: string;
   segmentId?: string;
+  headline?: string;
+  snippet?: string;
+  outlet?: string;
+  outletIcon?: string;
+  category?: 'encuesta' | 'trafico' | 'obras' | 'politica' | 'fiscalia' | 'economia';
+  isBreaking?: boolean;
+  breakingData?: {
+    speaker: string;
+    chyronHeadline: string;
+    chyronColor: 'red' | 'blue';
+    image?: string;
+    urgentActionPrompt?: string;
+  };
 }
 
 export type GameOverReason = 'impeached' | 'corruptionScandal' | 'electionDefeat';
@@ -64,12 +77,14 @@ export interface GameState {
   schemaVersion: number;
   id: string;
   cityId: string;
+  playerName: string;
   datasetVersion: number;
   trafficProviderId: string;
   seed: number;
   rngState: number;
   status: 'active' | 'gameOver';
   gameOverReason?: GameOverReason | null;
+
   clock: {
     /** Days elapsed since TIME_CONFIG.startDate. */
     day: number;

@@ -21,8 +21,10 @@ import {
 } from './simulation/projects/subwayHelper';
 
 import { t } from './i18n';
+import type { NewsItem } from './simulation/state';
 import { getAllCities, findCity, type CityCatalogEntry } from './data/cityCatalog';
 import { searchOsmCities, importCity, type OsmCitySearchResult } from './data/cityImporter';
+
 
 
 
@@ -51,6 +53,21 @@ export default function App() {
   // Freeform Subway Drafting State
   const [isDraftingSubway, setIsDraftingSubway] = useState(false);
   const [subwayDraftStations, setSubwayDraftStations] = useState<SubwayStationPoint[]>([]);
+
+  // Player Name & Cabinet Appointment State
+  const [playerNameInput, setPlayerNameInput] = useState<string>(() => {
+    return (typeof window !== 'undefined' && localStorage.getItem('fmt_player_name')) || 'Ministro';
+  });
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [pendingCityId, setPendingCityId] = useState<string | null>(null);
+
+  // Right Panel Tab State: 'news' | 'inspector'
+  const [rightPanelTab, setRightPanelTab] = useState<'news' | 'inspector'>('news');
+
+  // TV Breaking News Modal State
+  const [activeBreakingNews, setActiveBreakingNews] = useState<NewsItem | null>(null);
+  const [dismissedBreakingIds, setDismissedBreakingIds] = useState<Set<string>>(() => new Set());
+
 
   // Custom City Importer State
   const [catalogCities, setCatalogCities] = useState<CityCatalogEntry[]>(() => getAllCities());
@@ -102,12 +119,36 @@ export default function App() {
       setCatalogCities(getAllCities());
       setIsImporting(false);
       setIsImportModalOpen(false);
-      startNewGame(res.cityId);
+      handlePromptPlayerName(res.cityId);
     } catch (err: unknown) {
       setIsImporting(false);
       setSearchError(
         `Error importando ${selected.name}: ${err instanceof Error ? err.message : String(err)}. Intenta de nuevo o elige otra ciudad.`,
       );
+    }
+  };
+
+  const handlePromptPlayerName = (cityId: string) => {
+    setPendingCityId(cityId);
+    setIsNameModalOpen(true);
+  };
+
+  const handleConfirmPlayerName = () => {
+    const name = playerNameInput.trim() || 'Ministro';
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('fmt_player_name', name);
+    }
+    setIsNameModalOpen(false);
+    if (pendingCityId) {
+      startNewGame(pendingCityId, name);
+    }
+  };
+
+  const handleDismissBreakingNews = () => {
+    if (activeBreakingNews) {
+      setDismissedBreakingIds((prev) => new Set(prev).add(activeBreakingNews.id));
+      setActiveBreakingNews(null);
+      sessionRef.current?.setSpeed(1); // Resume game at 1x
     }
   };
 
@@ -160,6 +201,18 @@ export default function App() {
     session ? session.subscribe : () => () => {},
     session ? session.getSnapshot : () => null,
   );
+
+  // Automatically pop up Breaking News TV Broadcast when a critical event occurs
+  useEffect(() => {
+    if (!sessionSnapshot) return;
+    const latestBreaking = sessionSnapshot.state.news.find(
+      (item) => item.isBreaking && !dismissedBreakingIds.has(item.id),
+    );
+    if (latestBreaking) {
+      setActiveBreakingNews(latestBreaking);
+      sessionRef.current?.setSpeed(0); // Pause simulation while watching breaking news
+    }
+  }, [sessionSnapshot?.state.news, dismissedBreakingIds]);
 
   // Primary selected road index for inspection
   const primarySelectedRoadIndex = selectedRoadIndices[0] ?? null;
@@ -242,7 +295,7 @@ export default function App() {
     return sum / selectedRoadIndices.length;
   }, [selectedRoadIndices, sessionSnapshot]);
 
-  const startNewGame = async (cityId: string) => {
+  const startNewGame = async (cityId: string, customPlayerName?: string) => {
     sessionRef.current?.stop();
     sessionRef.current = null;
     setSession(null);
@@ -253,18 +306,23 @@ export default function App() {
     setSubwayDraftStations([]);
     setMapLayerMode('surface');
     setResumeError(null);
+    setActiveBreakingNews(null);
+    setDismissedBreakingIds(new Set());
+    setRightPanelTab('news');
     setLoadingCityId(cityId);
     setScreen('loading');
     try {
       const city = await loadCity(cityId);
       setLoadedCity(city);
 
+      const finalPlayerName = customPlayerName || playerNameInput.trim() || 'Ministro';
       const newGameState = createNewGame(
         {
           cityId,
           datasetVersion: city.bundle.roads.version.datasetVersion,
           trafficProviderId: city.traffic.providerId,
           seed: Date.now(),
+          playerName: finalPlayerName,
         },
         city.ctx,
       );
@@ -291,6 +349,7 @@ export default function App() {
       );
     } else {
       setSelectedRoadIndices(index !== null ? [index] : []);
+      if (index !== null) setRightPanelTab('inspector');
     }
   };
 
@@ -298,6 +357,7 @@ export default function App() {
   const handleDoubleClickSegment = (index: number) => {
     if (isDraftingSubway) return;
     if (!loadedCity) return;
+    setRightPanelTab('inspector');
     const avenueIndices = getAllAvenueSegments(loadedCity.ctx.network, index);
     if (isDrafting) {
       // In drafting mode: toggle or add entire avenue
@@ -321,6 +381,7 @@ export default function App() {
   };
 
   const startDraftingType = (typeId: ProjectTypeId) => {
+    setRightPanelTab('inspector');
     if (typeId === 'subway') {
       startDraftingSubway();
       return;
@@ -335,6 +396,7 @@ export default function App() {
       setDraftIndices(selectedRoadIndices);
     }
   };
+
 
   const handleApproveDraft = () => {
     if (!session || !isDrafting || draftIndices.length === 0 || !selectedBid) return;
@@ -371,6 +433,7 @@ export default function App() {
   };
 
   const startDraftingSubway = () => {
+    setRightPanelTab('inspector');
     setIsDrafting(false);
     setDraftIndices([]);
     setIsDraftingSubway(true);
@@ -379,6 +442,7 @@ export default function App() {
     setMapLayerMode('subterranean'); // auto-switch to subterranean view!
     session?.setSpeed(0); // pause simulation
   };
+
 
   const handleApproveSubwayDraft = () => {
     if (!session || !loadedCity || subwayDraftStations.length < 2) return;
@@ -516,8 +580,9 @@ export default function App() {
                 <button
                   className="primary"
                   style={{ width: '100%', marginTop: '6px', padding: '10px 14px', fontSize: '13px' }}
-                  onClick={() => startNewGame(city.id)}
+                  onClick={() => handlePromptPlayerName(city.id)}
                 >
+
                   {t('city.becomeMinister')} <span>→</span>
                 </button>
               </section>
@@ -832,9 +897,98 @@ export default function App() {
             </div>
           </div>
         )}
+
+
+        {/* Modal: Asunción del Mando Ministerial (Preguntar Nombre) */}
+        {isNameModalOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(5, 12, 8, 0.88)',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000,
+              padding: '20px',
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#0e1a13',
+                border: '1px solid #284432',
+                borderRadius: '16px',
+                width: '100%',
+                maxWidth: '480px',
+                padding: '28px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(74, 222, 128, 0.15)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '38px', marginBottom: '8px' }}>🏛️</div>
+                <h2 style={{ fontSize: '22px', margin: '0 0 6px', color: '#f0fdf4' }}>
+                  Despacho Ministerial de Transporte
+                </h2>
+                <p style={{ margin: 0, fontSize: '13px', color: '#88a090', lineHeight: 1.45 }}>
+                  Asumirás el control de la red vial de <b>{findCity(pendingCityId || '')?.name || 'la ciudad'}</b>.
+                  Ingresa tu nombre para los decretos oficiales, boletines del gabinete y portadas de los diarios.
+                </p>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', color: '#86efac', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px', fontWeight: 700 }}>
+                  Nombre y Apellido del Ministro/a
+                </label>
+                <input
+                  type="text"
+                  value={playerNameInput}
+                  onChange={(e) => setPlayerNameInput(e.target.value)}
+                  placeholder="Ej: Ing. Carlos Mendoza"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleConfirmPlayerName();
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '13px 16px',
+                    fontSize: '15px',
+                    backgroundColor: '#122218',
+                    border: '1px solid #2c4a36',
+                    borderRadius: '8px',
+                    color: '#e8f4ec',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  className="advance"
+                  style={{ flex: 1, padding: '12px' }}
+                  onClick={() => setIsNameModalOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="primary"
+                  style={{ flex: 2, padding: '12px', justifyContent: 'center', fontSize: '14px' }}
+                  onClick={handleConfirmPlayerName}
+                >
+                  Asumir Despacho ⚖️
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     );
   }
+
 
 
   if (screen === 'loading' || !sessionSnapshot || !loadedCity) {
@@ -1153,7 +1307,208 @@ export default function App() {
 
       {/* Right Sidebar: Contextual Info & Inspector / Draft Proposal */}
       <aside className="right-panel">
-        {isDraftingSubway ? (
+        {/* Tab switcher: Noticias & Opinión vs Inspector Vial */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '6px',
+            marginBottom: '16px',
+            background: '#0d1811',
+            padding: '4px',
+            borderRadius: '8px',
+            border: '1px solid #243829',
+          }}
+        >
+          <button
+            style={{
+              flex: 1,
+              padding: '8px 6px',
+              fontSize: '12px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              border: 'none',
+              background: rightPanelTab === 'news' ? '#22c55e' : 'transparent',
+              color: rightPanelTab === 'news' ? '#05230e' : '#8fa293',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease',
+            }}
+            onClick={() => setRightPanelTab('news')}
+          >
+            <span>📰</span> Noticias y Opinión
+            {state.news.some((n) => n.isBreaking) && (
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444',
+                  boxShadow: '0 0 8px #ef4444',
+                  display: 'inline-block',
+                }}
+              />
+            )}
+          </button>
+          <button
+            style={{
+              flex: 1,
+              padding: '8px 6px',
+              fontSize: '12px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              border: 'none',
+              background: rightPanelTab === 'inspector' ? '#22c55e' : 'transparent',
+              color: rightPanelTab === 'inspector' ? '#05230e' : '#8fa293',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease',
+            }}
+            onClick={() => setRightPanelTab('inspector')}
+          >
+            <span>🛣️</span> Inspector {primarySelectedRoadIndex !== null || isDrafting ? '●' : ''}
+          </button>
+        </div>
+
+        {rightPanelTab === 'news' ? (
+          <div>
+            {/* Citizen Opinion Barometer Card */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #112218, #182e20)',
+                border: '1px solid #2a4432',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                marginBottom: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="eyebrow" style={{ margin: 0, color: '#86efac' }}>
+                  📊 Barómetro de Opinión Pública
+                </span>
+                <small style={{ color: '#688272', fontSize: '10px' }}>Datum / Ipsos</small>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginTop: '8px' }}>
+                <span
+                  style={{
+                    fontSize: '32px',
+                    fontWeight: 900,
+                    color:
+                      state.politics.approval >= 0.45
+                        ? '#4ade80'
+                        : state.politics.approval >= 0.25
+                        ? '#facc15'
+                        : '#ef4444',
+                    fontFamily: 'DM Mono, monospace',
+                  }}
+                >
+                  {formatPercent(state.politics.approval)}
+                </span>
+                <span style={{ fontSize: '12px', color: '#c4cec5', lineHeight: 1.3 }}>
+                  Aprobación a la gestión del Ministro <b>{state.playerName}</b>
+                </span>
+              </div>
+              <div
+                style={{
+                  marginTop: '8px',
+                  fontSize: '11px',
+                  color: state.politics.approval < 0.25 ? '#fca5a5' : '#88a090',
+                  fontWeight: state.politics.approval < 0.25 ? 600 : 400,
+                }}
+              >
+                {state.politics.approval >= 0.5
+                  ? '🌟 La ciudadanía percibe mejoras palpables en el tránsito y respalda el plan de obras.'
+                  : state.politics.approval >= 0.25
+                  ? '⚠️ Clima de impaciencia. Vecinos exigen acelerar obras y descongestionar avenidas.'
+                  : '🚨 ¡ALERTA ROJA! Descontento masivo en las calles y amenaza de censura parlamentaria.'}
+              </div>
+            </div>
+
+            {/* News List */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <p className="eyebrow" style={{ margin: 0 }}>Despachos de Prensa · En Vivo</p>
+              <small style={{ color: '#688272', fontSize: '10px' }}>{state.news.length} publicaciones</small>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: 'calc(100vh - 350px)', overflowY: 'auto' }}>
+              {state.news.map((item) => {
+                const isCrit = item.isBreaking || item.severity === 'danger';
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      if (item.isBreaking || item.breakingData) {
+                        setActiveBreakingNews(item);
+                        sessionRef.current?.setSpeed(0);
+                      }
+                    }}
+                    style={{
+                      backgroundColor: isCrit ? 'rgba(239, 68, 68, 0.08)' : '#101913',
+                      border: isCrit ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid #233427',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      cursor: (item.isBreaking || item.breakingData) ? 'pointer' : 'default',
+                      transition: 'border-color 0.15s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', color: '#86efac', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{item.outletIcon || '📰'}</span> {item.outlet || 'Boletín Ministerial'}
+                      </span>
+                      <small style={{ color: '#688272', fontSize: '10px', fontFamily: 'DM Mono, monospace' }}>
+                        Día {item.day}
+                      </small>
+                    </div>
+
+                    <h4
+                      style={{
+                        margin: '0 0 6px',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: isCrit ? '#fca5a5' : '#f0fdf4',
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {item.headline || t(item.key as string, item.params)}
+                    </h4>
+
+                    {item.snippet && (
+                      <p style={{ margin: 0, fontSize: '11px', color: '#90a896', lineHeight: 1.45 }}>
+                        {item.snippet}
+                      </p>
+                    )}
+
+                    {(item.isBreaking || item.breakingData) && (
+                      <div
+                        style={{
+                          marginTop: '8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '10px',
+                          color: '#f87171',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        <span>🔴</span> Transmisión en TV · Ver Alerta →
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : isDraftingSubway ? (
+
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p className="eyebrow" style={{ color: '#c084fc', margin: 0 }}>Subsuelo · Modo Libre</p>
@@ -1581,6 +1936,217 @@ export default function App() {
           </div>
         )}
       </aside>
+
+      {/* TV Breaking News Modal (Noticiero en Vivo) */}
+      {activeBreakingNews && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(3, 8, 5, 0.90)',
+            backdropFilter: 'blur(14px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0a130d',
+              border: '2px solid #b91c1c',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '680px',
+              overflow: 'hidden',
+              boxShadow: '0 0 50px rgba(220, 38, 38, 0.45), 0 25px 60px rgba(0, 0, 0, 0.95)',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {/* Broadcast Live Header */}
+            <div
+              style={{
+                background: 'linear-gradient(90deg, #991b1b, #7f1d1d)',
+                padding: '10px 18px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.15)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '3px',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ffffff',
+                    }}
+                  />
+                  EN VIVO
+                </span>
+                <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700, letterSpacing: '0.05em' }}>
+                  TRANSMISIÓN DE EMERGENCIA · NOTICIA DE IMPACTO
+                </span>
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: 'DM Mono, monospace' }}>
+                CANAL 24H
+              </div>
+            </div>
+
+            {/* TV Screen with Photo & Lower-Third Chyron */}
+            <div style={{ position: 'relative', width: '100%', height: '320px', backgroundColor: '#000', overflow: 'hidden' }}>
+              <img
+                src="/assets/congressman.png"
+                alt="Transmisión en vivo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center 20%',
+                }}
+              />
+
+              {/* Scanlines broadcast overlay */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 255, 0, 0.03))',
+                  backgroundSize: '100% 3px, 6px 100%',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              {/* Lower-Third News Chyron (Franja de Noticiero) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {/* Speaker label tag */}
+                <div
+                  style={{
+                    backgroundColor: activeBreakingNews.breakingData?.chyronColor === 'blue' ? '#1e40af' : '#7f1d1d',
+                    color: '#f8fafc',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '4px 14px',
+                    alignSelf: 'flex-start',
+                    marginLeft: '14px',
+                    borderTopLeftRadius: '4px',
+                    borderTopRightRadius: '4px',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    boxShadow: '0 -2px 8px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  {activeBreakingNews.breakingData?.speaker || 'CONG. VÍCTOR BUSTAMANTE · COMISIÓN DE TRANSPORTES'}
+                </div>
+
+                {/* Main Headline Franja */}
+                <div
+                  style={{
+                    backgroundColor: activeBreakingNews.breakingData?.chyronColor === 'blue' ? '#1e3a8a' : '#b91c1c',
+                    color: '#ffffff',
+                    padding: '10px 16px',
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    borderTop: '2px solid #facc15',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  <span style={{ color: '#facc15', fontSize: '18px', flexShrink: 0 }}>🚨</span>
+                  <span style={{ lineHeight: 1.25 }}>
+                    {activeBreakingNews.breakingData?.chyronHeadline || activeBreakingNews.headline}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Report Body & Citizen Context */}
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#88a090', fontSize: '12px' }}>
+                  🗞️ {activeBreakingNews.outlet || 'Boletín de Prensa Nacional'} · Día {activeBreakingNews.day}
+                </span>
+                <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600 }}>
+                  Situación Crítica en {loadedCity.bundle.roads.city.name}
+                </span>
+              </div>
+
+              <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6, color: '#e2e8f0' }}>
+                {activeBreakingNews.snippet}
+              </p>
+
+              <div
+                style={{
+                  backgroundColor: '#162319',
+                  border: '1px solid #2d4533',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  fontSize: '12px',
+                  color: '#94a99b',
+                  lineHeight: 1.45,
+                }}
+              >
+                ⚠️ <b>Aviso al Despacho Ministerial:</b>{' '}
+                {activeBreakingNews.breakingData?.urgentActionPrompt ||
+                  'Toma decisiones urgentes de infraestructura y presupuesto para evitar la moción de censura en el Congreso.'}
+              </div>
+
+              <button
+                className="primary"
+                style={{
+                  marginTop: '4px',
+                  padding: '12px 18px',
+                  fontSize: '14px',
+                  background: 'linear-gradient(135deg, #15803d, #22c55e)',
+                  border: '1px solid #4ade80',
+                  color: '#052e16',
+                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+                onClick={handleDismissBreakingNews}
+              >
+                <span>🏛️</span> Atender la Emergencia y Retomar Mando
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Bottom Briefing / News Feed (Ministry Intelligence) */}
       <section className="event-feed">

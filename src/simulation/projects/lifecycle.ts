@@ -21,7 +21,9 @@ export function advanceProjectDay(project: Project, day: number): ProjectDayResu
     const progress = Math.min(1, (day - p.phaseStartDay) / Math.max(1, p.constructionDays));
     if (progress >= 1) {
       p = { ...p, phase: 'completed', progress: 1, completedDay: day, phaseStartDay: day };
-      events.push({ ...base, severity: 'success', key: 'news.projectCompleted' });
+      const key = p.typeId === 'subway' ? 'news.subwayCompleted' : 'news.projectCompleted';
+      events.push({ ...base, severity: 'success', key });
+
     } else {
       p = { ...p, progress };
       const halfway = 0.5;

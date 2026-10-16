@@ -13,7 +13,9 @@ import { constructionDays, PROJECT_TYPES, projectCost } from './projects/project
 import type { ContractorBid } from './projects/contractors';
 import { hashString, randomFor } from './random';
 import { GAME_STATE_SCHEMA_VERSION, type GameState, type NewsItem, type Project } from './state';
+import { buildRichNewsItem } from './news/newsTemplates';
 import { isFirstDayOfMonth, isFirstDayOfYear } from './time/clock';
+
 import {
   averageCongestion,
   computeTraffic,
@@ -63,6 +65,7 @@ export interface NewGameOptions {
   trafficProviderId: string;
   seed: number;
   id?: string;
+  playerName?: string;
 }
 
 export function createNewGame(options: NewGameOptions, ctx: SimulationContext): GameState {
@@ -73,6 +76,7 @@ export function createNewGame(options: NewGameOptions, ctx: SimulationContext): 
     schemaVersion: GAME_STATE_SCHEMA_VERSION,
     id: options.id ?? `game-${options.seed.toString(36)}`,
     cityId: options.cityId,
+    playerName: options.playerName?.trim() || 'Ministro',
     datasetVersion: options.datasetVersion,
     trafficProviderId: options.trafficProviderId,
     seed: options.seed,
@@ -110,13 +114,60 @@ export function createNewGame(options: NewGameOptions, ctx: SimulationContext): 
 export function addNews(state: GameState, items: Omit<NewsItem, 'id'>[]): GameState {
   if (items.length === 0) return state;
   let nextId = state.nextId;
-  const created = items.map((item) => ({ ...item, id: `n${nextId++}` }));
+  const cityName = findCity(state.cityId)?.name || 'la ciudad';
+
+  const enriched = items.map((raw) => {
+    if (!raw.headline) {
+      const rich = buildRichNewsItem(
+        raw.key,
+        {
+          playerName: state.playerName,
+          cityName,
+          day: raw.day,
+          approvalPct:
+            typeof raw.params?.approval === 'number'
+              ? Number(raw.params.approval)
+              : Math.round(state.politics.approval * 100),
+          congestionPct:
+            typeof raw.params?.congestion === 'number' ? Number(raw.params.congestion) : undefined,
+          roadName:
+            typeof raw.params?.road === 'string'
+              ? String(raw.params.road)
+              : typeof raw.params?.name === 'string'
+              ? String(raw.params.name)
+              : undefined,
+          pctDelta: typeof raw.params?.pct === 'number' ? Number(raw.params.pct) : undefined,
+          costFormatted:
+            typeof raw.params?.cost === 'string' ? String(raw.params.cost) : undefined,
+          companyName:
+            typeof raw.params?.company === 'string' ? String(raw.params.company) : undefined,
+        },
+        state.cityId,
+        raw.severity,
+      );
+      return {
+        ...rich,
+        ...raw,
+        headline: raw.headline || rich.headline,
+        snippet: raw.snippet || rich.snippet,
+        outlet: raw.outlet || rich.outlet,
+        outletIcon: raw.outletIcon || rich.outletIcon,
+        category: raw.category || rich.category,
+        isBreaking: raw.isBreaking ?? rich.isBreaking,
+        breakingData: raw.breakingData ?? rich.breakingData,
+        id: `n${nextId++}`,
+      };
+    }
+    return { ...raw, id: `n${nextId++}` };
+  });
+
   return {
     ...state,
     nextId,
-    news: [...created.reverse(), ...state.news].slice(0, NEWS_CONFIG.maxItems),
+    news: [...enriched.reverse(), ...state.news].slice(0, NEWS_CONFIG.maxItems),
   };
 }
+
 
 const MAJOR_TYPES = new Set(['motorway', 'trunk', 'primary']);
 
@@ -291,6 +342,70 @@ export function advanceDay(state: GameState, ctx: SimulationContext): GameState 
   };
   next = addNews(next, events);
 
+  // Weekly intelligence and polling report (every 7 days, unless monthlyBulletin triggers)
+  if (day % 7 === 0 && !isFirstDayOfMonth(day)) {
+    const traffic = computeGameTraffic(next, ctx, next.projects, day);
+    const networkCongestion = averageCongestion(ctx.network, traffic);
+    const prevApproval = next.politics.approval;
+    const newApproval = updateApproval(next, networkCongestion);
+    const approvalDelta = Math.round((newApproval - prevApproval) * 100);
+    const appPct = Math.round(newApproval * 100);
+    const congPct = Math.round(networkCongestion * 100);
+
+    const weeklyEvents: Omit<NewsItem, 'id'>[] = [];
+
+    // 1. Critical congestion threshold (>= 72%)
+    if (congPct >= 72) {
+      weeklyEvents.push({
+        day,
+        severity: 'danger',
+        key: 'news.gridlockCrisis',
+        params: { congestion: congPct, name: next.playerName },
+      });
+    }
+    // 2. Critical approval threshold (< 22%)
+    else if (appPct < 22) {
+      weeklyEvents.push({
+        day,
+        severity: 'danger',
+        key: 'news.censureWarning',
+        params: { approval: appPct, name: next.playerName },
+      });
+    }
+    // 3. Significant poll movement
+    else if (approvalDelta >= 1) {
+      weeklyEvents.push({
+        day,
+        severity: 'success',
+        key: 'news.weeklyPollRise',
+        params: { pct: appPct, name: next.playerName },
+      });
+    } else if (approvalDelta <= -1) {
+      weeklyEvents.push({
+        day,
+        severity: 'warning',
+        key: 'news.weeklyPollFall',
+        params: { pct: appPct, name: next.playerName },
+      });
+    } else {
+      // 4. Routine weekly editorial
+      weeklyEvents.push({
+        day,
+        severity: 'info',
+        key: 'news.weeklyEditorial',
+        params: { name: next.playerName },
+      });
+    }
+
+    next = addNews(
+      {
+        ...next,
+        politics: { ...next.politics, approval: newApproval },
+      },
+      weeklyEvents,
+    );
+  }
+
   if (isFirstDayOfYear(day)) {
     const annualBudget = findCity(state.cityId)?.initialBudget ?? ECONOMY_CONFIG.annualTransportBudget;
     next = addNews({ ...next, finance: depositAnnualBudget(next.finance, annualBudget) }, [
@@ -307,6 +422,7 @@ export function advanceDay(state: GameState, ctx: SimulationContext): GameState 
   }
   return next;
 }
+
 
 export function advanceDays(state: GameState, ctx: SimulationContext, days: number): GameState {
   let s = state;
