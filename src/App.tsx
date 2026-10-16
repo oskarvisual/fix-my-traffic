@@ -1847,15 +1847,24 @@ export default function App() {
             )}
 
             {/* Active Project Banner on this Road if present */}
+            {/* Active Project Banner on this Road if present */}
             {activeProjectOnSegment && (
               <div style={{ background: '#19221a', border: '1px solid #ef4444', borderRadius: '4px', padding: '10px', margin: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="eyebrow" style={{ color: '#ef4444', margin: 0 }}>Proyecto en Ejecución</span>
+                  <span className="eyebrow" style={{ color: '#ef4444', margin: 0 }}>
+                    {activeProjectOnSegment.phase === 'construction' ? '🚧 Obras en Ejecución' : 'Proyecto Aprobado'}
+                  </span>
                   <span style={{ fontSize: '11px', color: '#b8e86c' }}>{formatPercent(activeProjectOnSegment.progress)}</span>
                 </div>
                 <h3 style={{ margin: '4px 0 2px', fontSize: '15px' }}>
                   {PROJECT_CONFIG[activeProjectOnSegment.typeId]?.icon} {activeProjectOnSegment.name}
                 </h3>
+                {activeProjectOnSegment.phase === 'construction' && (
+                  <div style={{ background: 'rgba(249, 115, 22, 0.15)', border: '1px solid #f97316', borderRadius: '4px', padding: '6px 8px', margin: '6px 0', fontSize: '11px', color: '#fed7aa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🚧</span>
+                    <span><b>Calle cerrada al tránsito:</b> Tráfico vehicular desviado hacia vías paralelas cercanas.</span>
+                  </div>
+                )}
                 <p style={{ fontSize: '11px', color: '#a0b0a3', margin: '2px 0 8px' }}>
                   Contratista: <b>{activeProjectOnSegment.contractor?.name ?? 'Estándar'}</b> · Fase: {t(`project.phase.${activeProjectOnSegment.phase}` as string)}
                 </p>
@@ -1877,19 +1886,21 @@ export default function App() {
               <i
                 style={{
                   background:
-                    CONGESTION_LEVELS.find(
-                      (l) => l.id === congestionLevel(avgCongestion),
-                    )?.color ?? '#22c55e',
+                    activeProjectOnSegment?.phase === 'construction'
+                      ? '#f97316'
+                      : CONGESTION_LEVELS.find((l) => l.id === congestionLevel(avgCongestion))?.color ?? '#22c55e',
                 }}
               />
               <div>
                 <strong>
-                  {t(`congestion.${congestionLevel(avgCongestion)}` as string)}
+                  {activeProjectOnSegment?.phase === 'construction'
+                    ? '🚧 Cerrada por Obras'
+                    : t(`congestion.${congestionLevel(avgCongestion)}` as string)}
                 </strong>
                 <small>
-                  {t('road.score', {
-                    value: avgCongestion.toFixed(2),
-                  })}
+                  {activeProjectOnSegment?.phase === 'construction'
+                    ? 'Vía vacía · 96% del flujo desviado a calles alternas'
+                    : t('road.score', { value: avgCongestion.toFixed(2) })}
                 </small>
               </div>
             </div>
@@ -1901,11 +1912,19 @@ export default function App() {
               </div>
               <div>
                 <dt>{t('road.demand')}</dt>
-                <dd>{Math.round(traffic.currentDemand[selectedRoad.index])} veh/h</dd>
+                <dd>
+                  {activeProjectOnSegment?.phase === 'construction'
+                    ? `${Math.round(traffic.currentDemand[selectedRoad.index])} veh/h (Vía vacía · Desvío activo ↪️)`
+                    : `${Math.round(traffic.currentDemand[selectedRoad.index])} veh/h`}
+                </dd>
               </div>
               <div>
                 <dt>{t('road.capacity')}</dt>
-                <dd>{Math.round(traffic.capacity[selectedRoad.index])} veh/h</dd>
+                <dd>
+                  {activeProjectOnSegment?.phase === 'construction'
+                    ? '0 veh/h (Cerrada al tránsito)'
+                    : `${Math.round(traffic.capacity[selectedRoad.index])} veh/h`}
+                </dd>
               </div>
               <div>
                 <dt>{t('road.lanes')}</dt>

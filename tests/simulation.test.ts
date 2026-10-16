@@ -105,6 +105,24 @@ describe('Traffic Engine Invariants', () => {
 
     expect(demandReducedState.congestion[0]).toBeLessThan(normalState.congestion[0]);
   });
+
+  it('diverts over 90% of traffic to parallel streets when a corridor is closed for elevated metro or major works', () => {
+    const normalMods = createModifiers(network.segments.length);
+    const normalState = computeTraffic(network, baselineDemand, normalMods);
+
+    const closedMods = createModifiers(network.segments.length);
+    applyCapacityChange(closedMods, [0], 0.05); // 95% closure for elevated metro construction
+    const closedState = computeTraffic(network, baselineDemand, closedMods);
+
+    // Closed street is virtually empty of car traffic
+    expect(closedState.currentDemand[0]).toBeLessThan(normalState.currentDemand[0] * 0.1);
+    // Closed street normal congestion is 0 (blocked for works, empty of traffic)
+    expect(closedState.congestion[0]).toBe(0);
+    // Parallel street absorbs the heavy diverted traffic
+    expect(closedState.currentDemand[1]).toBeGreaterThan(normalState.currentDemand[1] * 1.5);
+    // Parallel street suffers high congestion
+    expect(closedState.congestion[1]).toBeGreaterThan(normalState.congestion[1]);
+  });
 });
 
 describe('Game Lifecycle & Project Flow', () => {

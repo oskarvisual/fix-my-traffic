@@ -54,7 +54,7 @@ export const PROJECT_CONFIG = {
     minConstructionDays: 120,
     maxCorridorKm: 25,
     minCorridorKm: 1.0,
-    constructionCapacityFactor: 0.35, // 65% capacity loss during works (heavy diversion!)
+    constructionCapacityFactor: 0.15, // Heavy closure during segregated busway and station works
     completedCapacityFactor: 0.85, // Segregated bus lane takes 1 lane
     corridorDemandReduction: 0.30, // 30% car drivers switch to BRT
     catchmentDemandReduction: 0.08,
@@ -70,7 +70,7 @@ export const PROJECT_CONFIG = {
     minConstructionDays: 300,
     maxCorridorKm: 35,
     minCorridorKm: 2.0,
-    constructionCapacityFactor: 0.50, // Central median occupied by viaduct columns
+    constructionCapacityFactor: 0.05, // Avenue closed for overhead viaduct construction & cranes (95% diversion)
     completedCapacityFactor: 0.95,
     corridorDemandReduction: 0.45, // Major mode shift
     catchmentDemandReduction: 0.14,
@@ -86,7 +86,7 @@ export const PROJECT_CONFIG = {
     minConstructionDays: 500,
     maxCorridorKm: 40,
     minCorridorKm: 2.5,
-    constructionCapacityFactor: 0.80, // Tunneling underground, surface impact mainly around stations
+    constructionCapacityFactor: 0.85, // Tunneling underground, surface impact mainly around station shafts
     completedCapacityFactor: 1.00, // 0 surface lane loss
     corridorDemandReduction: 0.55, // Massive relief
     catchmentDemandReduction: 0.20,

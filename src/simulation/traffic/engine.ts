@@ -71,33 +71,65 @@ export function redistributeTraffic(
     if (loss <= 0) continue;
     const alts = network.segments[i].alternatives;
     if (alts.length === 0) continue;
-    const share = Math.min(maxDiversionShare, loss * diversionElasticity);
+
+    // For moderate capacity reduction, use standard elasticity.
+    // When a road is closed or heavily barricaded for construction (loss >= 0.75, capacityFactor <= 0.25):
+    // drivers cannot use the road, so diversion share rises steeply up to 96%.
+    const share =
+      loss >= 0.75
+        ? Math.min(0.96, Math.max(maxDiversionShare, loss * 1.05))
+        : Math.min(maxDiversionShare, loss * diversionElasticity);
+
     const diverted = ownDemand[i] * share;
     if (diverted <= 0) continue;
     result[i] -= diverted;
     const toMove = diverted * (1 - suppressedShareOfDiverted);
+
     let totalWeight = 0;
     const weights = alts.map((a) => {
+      // Do not divert traffic into another segment that is also closed or under heavy construction!
+      if (capacityFactor[a.index] < 0.4) return 0;
       const cap = capacity[a.index];
       const spare = cap > 0 ? Math.max(minSpareWeight, (cap - ownDemand[a.index]) / cap) : 0;
       const w = a.weight * spare;
       totalWeight += w;
       return w;
     });
-    if (totalWeight <= 0) continue;
-    alts.forEach((a, k) => {
-      result[a.index] += toMove * (weights[k] / totalWeight);
-    });
+
+    if (totalWeight <= 0) {
+      // Fallback: If all parallel streets are at or near capacity, drivers are still forced to take them!
+      const fallbackWeights = alts.map((a) => (capacityFactor[a.index] >= 0.4 ? a.weight : 0));
+      const fallbackTotal = fallbackWeights.reduce((acc, v) => acc + v, 0);
+      if (fallbackTotal > 0) {
+        alts.forEach((a, k) => {
+          result[a.index] += toMove * (fallbackWeights[k] / fallbackTotal);
+        });
+      }
+    } else {
+      alts.forEach((a, k) => {
+        result[a.index] += toMove * (weights[k] / totalWeight);
+      });
+    }
   }
   return result;
 }
 
-export function calculateCongestion(demand: Float32Array, capacity: Float32Array) {
+export function calculateCongestion(
+  demand: Float32Array,
+  capacity: Float32Array,
+  capacityFactor?: Float32Array,
+) {
   const vc = new Float32Array(demand.length);
   const congestion = new Float32Array(demand.length);
   for (let i = 0; i < demand.length; i++) {
-    vc[i] = capacity[i] > 0 ? demand[i] / capacity[i] : 10;
-    congestion[i] = congestionFromVc(vc[i]);
+    // If a segment is closed for works (capacityFactor <= 0.1), vehicle traffic is blocked/empty, not jammed
+    if (capacityFactor && capacityFactor[i] <= 0.1) {
+      vc[i] = 0;
+      congestion[i] = 0;
+    } else {
+      vc[i] = capacity[i] > 0 ? demand[i] / capacity[i] : 10;
+      congestion[i] = congestionFromVc(vc[i]);
+    }
   }
   return { vc, congestion };
 }
@@ -116,7 +148,7 @@ export function computeTraffic(
     ownDemand[i] = baselineDemand[i] * modifiers.demandFactor[i] * demandGrowth;
   }
   const currentDemand = redistributeTraffic(network, ownDemand, capacity, modifiers.capacityFactor);
-  const { vc, congestion } = calculateCongestion(currentDemand, capacity);
+  const { vc, congestion } = calculateCongestion(currentDemand, capacity, modifiers.capacityFactor);
   return { capacity, ownDemand, currentDemand, vc, congestion };
 }
 

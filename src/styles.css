@@ -31,4 +31,92 @@
 .transit-legend-item .transit-bar{width:14px;height:4px;border-radius:2px;display:inline-block;flex-shrink:0}
 .transit-legend-item .transit-text{flex:1;font-size:11px!important;line-height:1.3!important;color:inherit!important;white-space:normal!important;word-break:break-word!important;overflow:visible!important}
 
+/* Map Construction & Detour Badges */
+.fmt-construction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(18, 12, 5, 0.94);
+  border: 1.5px solid #f97316;
+  border-radius: 20px;
+  padding: 3px 9px 3px 7px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75), 0 0 10px rgba(249, 115, 22, 0.45);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  animation: fmt-construction-pulse 2.2s infinite ease-in-out;
+  white-space: nowrap;
+}
+
+.fmt-construction-badge:hover {
+  transform: translate(-50%, -55%) scale(1.08);
+  border-color: #facc15;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), 0 0 16px rgba(250, 204, 21, 0.65);
+  z-index: 50;
+}
+
+.fmt-detour-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(8, 20, 32, 0.94);
+  border: 1.5px solid #38bdf8;
+  border-radius: 20px;
+  padding: 3px 9px 3px 7px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75), 0 0 10px rgba(56, 189, 248, 0.45);
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  animation: fmt-detour-pulse 2.5s infinite ease-in-out;
+  white-space: nowrap;
+}
+
+.fmt-detour-badge:hover {
+  transform: translate(-50%, -55%) scale(1.08);
+  border-color: #00f0ff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), 0 0 16px rgba(0, 240, 255, 0.65);
+  z-index: 50;
+}
+
+.fmt-badge-emoji {
+  font-size: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+}
+
+.fmt-badge-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fef08a;
+  text-transform: uppercase;
+}
+
+.fmt-detour-badge .fmt-badge-text {
+  color: #bae6fd;
+}
+
+@keyframes fmt-construction-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75), 0 0 8px rgba(249, 115, 22, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85), 0 0 16px rgba(249, 115, 22, 0.75);
+  }
+}
+
+@keyframes fmt-detour-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75), 0 0 8px rgba(56, 189, 248, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85), 0 0 16px rgba(56, 189, 248, 0.7);
+  }
+}
+
 

@@ -75,6 +75,20 @@ export const TrafficMap = ({
     }
   }, [isDraftingSubway]);
 
+  const constructionSegmentSet = useMemo(() => {
+    const set = new Set<number>();
+    const activeBuilding = activeProjects.filter((p) => p.phase === 'construction');
+    if (activeBuilding.length === 0) return set;
+    const idMap = new Map(network.segments.map((s) => [s.id, s.index]));
+    for (const p of activeBuilding) {
+      for (const segId of p.segmentIds) {
+        const idx = idMap.get(segId);
+        if (idx !== undefined) set.add(idx);
+      }
+    }
+    return set;
+  }, [activeProjects, network]);
+
   const updateFeatureStates = (map: maplibregl.Map) => {
     const selectedSet = new Set(selectedSegmentIndices);
     const draftSet = new Set(corridorIndices);
@@ -86,6 +100,7 @@ export const TrafficMap = ({
           congestion,
           selected: selectedSet.has(i),
           inDraft: draftSet.has(i),
+          underConstruction: constructionSegmentSet.has(i),
         },
       );
     }
@@ -180,6 +195,8 @@ export const TrafficMap = ({
             '#00f0ff', // Selected segment highlight (Cyan)
             ['boolean', ['feature-state', 'inDraft'], false],
             '#38bdf8', // Draft corridor highlight (Sky Blue)
+            ['boolean', ['feature-state', 'underConstruction'], false],
+            '#f97316', // Construction works (Hazard Orange)
             [
               'interpolate',
               ['linear'],
@@ -207,6 +224,7 @@ export const TrafficMap = ({
                 'any',
                 ['boolean', ['feature-state', 'selected'], false],
                 ['boolean', ['feature-state', 'inDraft'], false],
+                ['boolean', ['feature-state', 'underConstruction'], false],
               ],
               4,
               ['match', ['get', 'roadType'], 'motorway', 2.2, 'trunk', 1.8, 'primary', 1.5, 1.0],
@@ -218,6 +236,7 @@ export const TrafficMap = ({
                 'any',
                 ['boolean', ['feature-state', 'selected'], false],
                 ['boolean', ['feature-state', 'inDraft'], false],
+                ['boolean', ['feature-state', 'underConstruction'], false],
               ],
               7,
               ['match', ['get', 'roadType'], 'motorway', 4.8, 'trunk', 3.8, 'primary', 3.0, 'secondary', 2.2, 1.5],
@@ -229,10 +248,43 @@ export const TrafficMap = ({
                 'any',
                 ['boolean', ['feature-state', 'selected'], false],
                 ['boolean', ['feature-state', 'inDraft'], false],
+                ['boolean', ['feature-state', 'underConstruction'], false],
               ],
               12,
               ['match', ['get', 'roadType'], 'motorway', 9, 'trunk', 7.5, 'primary', 6, 'secondary', 4.5, 3],
             ],
+          ],
+        },
+      });
+
+      // Layer 2B: Hazard Barricade Stripes for Roads Under Construction
+      map.addLayer({
+        id: 'roads-construction-hazard',
+        type: 'line',
+        source: 'roads',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'butt',
+        },
+        paint: {
+          'line-color': '#180a02',
+          'line-dasharray': [1.2, 1.2],
+          'line-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'underConstruction'], false],
+            0.9,
+            0.0,
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11,
+            2.5,
+            14,
+            5.5,
+            17,
+            10,
           ],
         },
       });
@@ -603,13 +655,104 @@ export const TrafficMap = ({
     if (mapLayerMode === 'subterranean') {
       if (map.getLayer('roads-traffic')) map.setPaintProperty('roads-traffic', 'line-opacity', 0.18);
       if (map.getLayer('roads-casing')) map.setPaintProperty('roads-casing', 'line-opacity', 0.12);
+      if (map.getLayer('roads-construction-hazard')) map.setPaintProperty('roads-construction-hazard', 'line-opacity', 0.0);
       if (map.getLayer('subterranean-wash')) map.setPaintProperty('subterranean-wash', 'fill-opacity', 0.65);
     } else {
       if (map.getLayer('roads-traffic')) map.setPaintProperty('roads-traffic', 'line-opacity', 1.0);
       if (map.getLayer('roads-casing')) map.setPaintProperty('roads-casing', 'line-opacity', 0.85);
+      if (map.getLayer('roads-construction-hazard')) {
+        map.setPaintProperty('roads-construction-hazard', 'line-opacity', [
+          'case',
+          ['boolean', ['feature-state', 'underConstruction'], false],
+          0.9,
+          0.0,
+        ]);
+      }
       if (map.getLayer('subterranean-wash')) map.setPaintProperty('subterranean-wash', 'fill-opacity', 0.0);
     }
   }, [mapLayerMode]);
+
+  const constructionMarkersRef = useRef<maplibregl.Marker[]>([]);
+
+  // Spawn visual closed road and detour markers (🚧 ↪️ 🦺 ⚠️) on roads under construction
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isLoadedRef.current) return;
+
+    // Clear previous construction markers
+    constructionMarkersRef.current.forEach((m) => m.remove());
+    constructionMarkersRef.current = [];
+
+    const activeBuilding = activeProjects.filter((p) => p.phase === 'construction');
+    if (activeBuilding.length === 0) return;
+
+    const idMap = new Map(network.segments.map((s) => [s.id, s]));
+
+    for (const project of activeBuilding) {
+      const segs = project.segmentIds
+        .map((id) => idMap.get(id))
+        .filter((s): s is (typeof network.segments)[0] => s !== undefined);
+
+      if (segs.length === 0) continue;
+
+      // 1. Entry / Start of corridor: 🚧 CALLE CERRADA
+      const firstSeg = segs[0];
+      const startCoord = firstSeg.coordinates[0];
+      if (startCoord) {
+        const el = document.createElement('div');
+        el.className = 'fmt-construction-badge';
+        el.innerHTML = `<span class="fmt-badge-emoji">🚧</span><span class="fmt-badge-text">CALLE CERRADA</span>`;
+        el.title = `🚧 Vía cerrada por obras de "${project.name}". Tráfico vehicular desviado a calles alternas.`;
+        el.onclick = (e) => {
+          e.stopPropagation();
+          onSelectSegmentRef.current(firstSeg.index);
+        };
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat(startCoord as [number, number])
+          .addTo(map);
+        constructionMarkersRef.current.push(marker);
+      }
+
+      // 2. Intermediate points: alternating 🦺 EN OBRAS and ⚠️ MAQUINARIA / DESVÍO
+      const step = Math.max(1, Math.floor(segs.length / 3));
+      for (let i = step; i < segs.length; i += step) {
+        const seg = segs[i];
+        const midIdx = Math.floor(seg.coordinates.length / 2);
+        const midCoord = seg.coordinates[midIdx];
+        if (!midCoord) continue;
+
+        const isLast = i + step >= segs.length;
+        const el = document.createElement('div');
+
+        if (isLast) {
+          el.className = 'fmt-detour-badge';
+          el.innerHTML = `<span class="fmt-badge-emoji">↪️</span><span class="fmt-badge-text">DESVÍO VIAL</span>`;
+          el.title = `↪️ Desvío vehicular por construcción de "${project.name}".`;
+        } else {
+          const emoji = i % 2 === 0 ? '🦺' : '⚠️';
+          const label = i % 2 === 0 ? 'EN OBRAS' : 'MAQUINARIA';
+          el.className = 'fmt-construction-badge';
+          el.innerHTML = `<span class="fmt-badge-emoji">${emoji}</span><span class="fmt-badge-text">${label}</span>`;
+          el.title = `⚠️ Obra en ejecución: "${project.name}" (${Math.round(project.progress * 100)}%).`;
+        }
+
+        el.onclick = (e) => {
+          e.stopPropagation();
+          onSelectSegmentRef.current(seg.index);
+        };
+
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat(midCoord as [number, number])
+          .addTo(map);
+        constructionMarkersRef.current.push(marker);
+      }
+    }
+
+    return () => {
+      constructionMarkersRef.current.forEach((m) => m.remove());
+      constructionMarkersRef.current = [];
+    };
+  }, [activeProjects, network]);
 
   // Update feature-state when traffic, selection, or draft corridor changes
   useEffect(() => {
@@ -617,7 +760,7 @@ export const TrafficMap = ({
     if (!map || !isLoadedRef.current) return;
     updateFeatureStates(map);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [traffic, selectedSegmentIndices, corridorIndices, activeProjects]);
+  }, [traffic, selectedSegmentIndices, corridorIndices, activeProjects, constructionSegmentSet]);
 
   return (
     <div
