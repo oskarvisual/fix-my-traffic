@@ -109,14 +109,53 @@ export const CITY_CATALOG: CityCatalogEntry[] = [
   },
 ];
 
+const customCities: CityCatalogEntry[] = [];
+
+// Load custom cities from localStorage if available in browser
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    const raw = localStorage.getItem('fmt_custom_cities');
+    if (raw) {
+      const parsed = JSON.parse(raw) as CityCatalogEntry[];
+      if (Array.isArray(parsed)) {
+        customCities.push(...parsed);
+      }
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function registerCustomCity(entry: CityCatalogEntry): void {
+  const existingIdx = customCities.findIndex((c) => c.id === entry.id);
+  if (existingIdx >= 0) {
+    customCities[existingIdx] = entry;
+  } else {
+    customCities.push(entry);
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      localStorage.setItem('fmt_custom_cities', JSON.stringify(customCities));
+    } catch {
+      // Ignore quota/storage errors
+    }
+  }
+}
+
+export function getAllCities(): CityCatalogEntry[] {
+  return [...CITY_CATALOG, ...customCities];
+}
+
 export function findCity(id: string): CityCatalogEntry | undefined {
-  return CITY_CATALOG.find((c) => c.id === id);
+  return getAllCities().find((c) => c.id === id);
 }
 
 export function searchCities(query: string): CityCatalogEntry[] {
   const q = query.trim().toLowerCase();
-  if (!q) return CITY_CATALOG;
-  return CITY_CATALOG.filter(
+  const all = getAllCities();
+  if (!q) return all;
+  return all.filter(
     (c) => c.name.toLowerCase().includes(q) || c.searchTerms.some((t) => t.includes(q)),
   );
 }
+

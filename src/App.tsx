@@ -19,8 +19,12 @@ import {
   findSubwayCatchmentSegments,
   type SubwayStationPoint,
 } from './simulation/projects/subwayHelper';
+
 import { t } from './i18n';
-import { CITY_CATALOG, findCity } from './data/cityCatalog';
+import { getAllCities, findCity, type CityCatalogEntry } from './data/cityCatalog';
+import { searchOsmCities, importCity, type OsmCitySearchResult } from './data/cityImporter';
+
+
 
 export default function App() {
   const [screen, setScreen] = useState<'title' | 'city' | 'loading' | 'game'>('title');
@@ -48,7 +52,67 @@ export default function App() {
   const [isDraftingSubway, setIsDraftingSubway] = useState(false);
   const [subwayDraftStations, setSubwayDraftStations] = useState<SubwayStationPoint[]>([]);
 
+  // Custom City Importer State
+  const [catalogCities, setCatalogCities] = useState<CityCatalogEntry[]>(() => getAllCities());
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchingCities, setIsSearchingCities] = useState(false);
+  const [searchResults, setSearchResults] = useState<OsmCitySearchResult[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importingCityName, setImportingCityName] = useState<string>('');
+  const [importStatusMessage, setImportStatusMessage] = useState('');
+  const [importProgressPercent, setImportProgressPercent] = useState(0);
+
+  // Debounced Nominatim search for cities
+  useEffect(() => {
+    if (!isImportModalOpen) return;
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setIsSearchingCities(false);
+      return;
+    }
+    setIsSearchingCities(true);
+    setSearchError(null);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchOsmCities(q);
+        setSearchResults(results);
+      } catch (err: unknown) {
+        setSearchError(err instanceof Error ? err.message : 'Error buscando ciudades');
+      } finally {
+        setIsSearchingCities(false);
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [searchQuery, isImportModalOpen]);
+
+  const handleSelectAndImportCity = async (selected: OsmCitySearchResult) => {
+    setIsImporting(true);
+    setImportingCityName(selected.name);
+    setImportStatusMessage('Iniciando importación desde OpenStreetMap...');
+    setImportProgressPercent(5);
+    setSearchError(null);
+    try {
+      const res = await importCity(selected, (msg, pct) => {
+        setImportStatusMessage(msg);
+        setImportProgressPercent(pct);
+      });
+      setCatalogCities(getAllCities());
+      setIsImporting(false);
+      setIsImportModalOpen(false);
+      startNewGame(res.cityId);
+    } catch (err: unknown) {
+      setIsImporting(false);
+      setSearchError(
+        `Error importando ${selected.name}: ${err instanceof Error ? err.message : String(err)}. Intenta de nuevo o elige otra ciudad.`,
+      );
+    }
+  };
+
   // Initialize storage repository and auto-resume
+
   useEffect(() => {
     let cancelled = false;
     void saveRepo
@@ -394,14 +458,19 @@ export default function App() {
         <h1 style={{ marginBottom: '24px' }}>Select your city</h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', maxWidth: '1100px', width: '100%' }}>
-          {CITY_CATALOG.map((city) => {
+          {catalogCities.map((city) => {
             const badge = difficultyBadges[city.difficulty] ?? difficultyBadges.normal;
+            const transitSummary =
+              city.transitSummaryKey.startsWith('city.') && t(city.transitSummaryKey) !== city.transitSummaryKey
+                ? t(city.transitSummaryKey)
+                : `Red vial real de ${city.name} con ${city.streetsCount.toLocaleString()} vías y cálculo de demanda generado.`;
+
             return (
               <section key={city.id} className="city-card" style={{ margin: 0, padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                   <div className="map-mark" style={{ minHeight: '90px', width: '90px', padding: '14px', fontSize: '26px', flexShrink: 0 }}>
                     {city.badgeCode}
-                    <small style={{ marginTop: '16px', fontSize: '9px' }}>{cityCoordinates[city.id] ?? ''}</small>
+                    <small style={{ marginTop: '16px', fontSize: '9px' }}>{cityCoordinates[city.id] ?? `${city.badgeCode}`}</small>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -424,7 +493,7 @@ export default function App() {
                     </div>
                     <h2 style={{ fontSize: '22px', margin: '4px 0 6px' }}>{city.name}, {city.country}</h2>
                     <p style={{ fontSize: '12px', margin: 0, color: '#a0b4a4', lineHeight: 1.45 }}>
-                      {t(city.transitSummaryKey)}
+                      {transitSummary}
                     </p>
                   </div>
                 </div>
@@ -454,21 +523,319 @@ export default function App() {
               </section>
             );
           })}
+
+          {/* Interactive Card: Esa no es mi ciudad */}
+          <section
+            className="city-card custom-city-card"
+            style={{
+              margin: 0,
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              textAlign: 'center',
+              border: '2px dashed #3a5c44',
+              background: 'radial-gradient(ellipse at top, rgba(34, 84, 52, 0.25), rgba(12, 22, 16, 0.6))',
+              cursor: 'pointer',
+              minHeight: '260px',
+              transition: 'border-color 0.2s, transform 0.2s',
+            }}
+            onClick={() => {
+              setIsImportModalOpen(true);
+              setSearchQuery('');
+              setSearchResults([]);
+              setSearchError(null);
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
+              <div style={{ fontSize: '38px', lineHeight: 1 }}>🌍</div>
+              <h2 style={{ fontSize: '20px', margin: 0, color: '#e8f4ec', fontWeight: 600 }}>
+                ¿Esa no es tu ciudad?
+              </h2>
+              <p style={{ fontSize: '13px', margin: 0, color: '#90a896', maxWidth: '280px', lineHeight: 1.45 }}>
+                Busca cualquier ciudad del mundo. Descargaremos su red vial real y podrás jugarla de inmediato.
+              </p>
+            </div>
+
+            <button
+              className="primary"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: '13px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '16px',
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsImportModalOpen(true);
+                setSearchQuery('');
+                setSearchResults([]);
+                setSearchError(null);
+              }}
+            >
+              <span>🔍</span> Buscar e Importar Otra Ciudad
+            </button>
+          </section>
         </div>
 
-        {/* Coming soon note */}
-        <div style={{ marginTop: '24px', maxWidth: '1100px', width: '100%' }}>
-          <div className="city-card coming-soon" style={{ padding: '14px 20px', margin: 0 }}>
-            <div>
-              <span className="eyebrow" style={{ color: '#eab308', margin: 0 }}>Próximamente</span>
-              <h3 style={{ margin: '4px 0', fontSize: '15px' }}>Bogotá, Colombia</h3>
-              <p style={{ fontSize: '12px', margin: 0 }}>TransMilenio BRT, Corredor Carrera Séptima y Metro Línea 1 en construcción.</p>
+        {/* Modal: Buscar e Importar Ciudad */}
+        {isImportModalOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(5, 12, 8, 0.85)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '20px',
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !isImporting) {
+                setIsImportModalOpen(false);
+              }
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#0e1a13',
+                border: '1px solid #284432',
+                borderRadius: '16px',
+                width: '100%',
+                maxWidth: '620px',
+                maxHeight: '85vh',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(74, 222, 128, 0.1)',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Modal Header */}
+              <div
+                style={{
+                  padding: '20px 24px',
+                  borderBottom: '1px solid #1e3325',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                }}
+              >
+                <div>
+                  <h2 style={{ fontSize: '20px', margin: 0, color: '#f0fdf4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>🌍</span> {isImporting ? `Importando ${importingCityName}` : 'Buscar e Importar Ciudad'}
+                  </h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#88a090' }}>
+                    {isImporting
+                      ? 'Obteniendo geometría de OpenStreetMap y balanceando la red...'
+                      : 'Elige cualquier ciudad o metrópoli para convertirte en su ministro de transporte.'}
+                  </p>
+                </div>
+                {!isImporting && (
+                  <button
+                    onClick={() => setIsImportModalOpen(false)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#88a090',
+                      fontSize: '22px',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {isImporting ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 8px', gap: '20px' }}>
+                    <div style={{ fontSize: '48px', animation: 'pulse 1.5s infinite' }}>🛰️</div>
+                    <div style={{ width: '100%', textAlign: 'center' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 600, color: '#86efac', marginBottom: '8px' }}>
+                        {importStatusMessage}
+                      </div>
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '10px',
+                          backgroundColor: '#162b1e',
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          border: '1px solid #284432',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${importProgressPercent}%`,
+                            height: '100%',
+                            backgroundColor: '#22c55e',
+                            transition: 'width 0.4s ease',
+                            boxShadow: '0 0 12px rgba(34, 197, 94, 0.6)',
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '11px', color: '#688272' }}>
+                        <span>OpenStreetMap Overpass API</span>
+                        <span>{importProgressPercent}%</span>
+                      </div>
+                    </div>
+                    <div style={{ backgroundColor: '#14241a', padding: '12px 16px', borderRadius: '8px', border: '1px solid #1e3325', fontSize: '12px', color: '#90a896', lineHeight: 1.5, textAlign: 'center' }}>
+                      💡 La red vial real, líneas de transporte y avenidas principales se procesan en tu navegador y se respaldan en Supabase.
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Search Input */}
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Ej: Montevideo, Bogotá, Madrid, Medellín, Córdoba..."
+                        autoFocus
+                        style={{
+                          width: '100%',
+                          padding: '14px 16px',
+                          paddingLeft: '44px',
+                          fontSize: '15px',
+                          backgroundColor: '#122218',
+                          border: '1px solid #2c4a36',
+                          borderRadius: '10px',
+                          color: '#e8f4ec',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                      <span style={{ position: 'absolute', left: '16px', top: '15px', fontSize: '16px', color: '#688272' }}>
+                        🔍
+                      </span>
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '12px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#88a090',
+                            fontSize: '16px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Status/Error */}
+                    {isSearchingCities && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#86efac', fontSize: '13px', padding: '4px 0' }}>
+                        <span>⏳</span> Buscando ciudades en OpenStreetMap Nominatim...
+                      </div>
+                    )}
+
+                    {searchError && (
+                      <div
+                        style={{
+                          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                          color: '#fca5a5',
+                          fontSize: '13px',
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        ⚠️ {searchError}
+                      </div>
+                    )}
+
+                    {/* Search Results List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '360px', overflowY: 'auto' }}>
+                      {searchResults.map((item) => (
+                        <div
+                          key={item.placeId}
+                          style={{
+                            backgroundColor: '#14241a',
+                            border: '1px solid #233b2a',
+                            borderRadius: '10px',
+                            padding: '14px 16px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '12px',
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <h3 style={{ margin: 0, fontSize: '16px', color: '#f0fdf4' }}>
+                                {item.name}
+                              </h3>
+                              <span style={{ fontSize: '12px', color: '#90a896' }}>
+                                ({item.country})
+                              </span>
+                            </div>
+                            <p
+                              style={{
+                                margin: '4px 0 0',
+                                fontSize: '11px',
+                                color: '#688272',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {item.displayName}
+                            </p>
+                          </div>
+                          <button
+                            className="primary"
+                            style={{
+                              padding: '8px 16px',
+                              fontSize: '12px',
+                              flexShrink: 0,
+                              whiteSpace: 'nowrap',
+                            }}
+                            onClick={() => handleSelectAndImportCity(item)}
+                          >
+                            Importar y Jugar →
+                          </button>
+                        </div>
+                      ))}
+
+                      {searchResults.length === 0 && searchQuery.trim().length >= 2 && !isSearchingCities && !searchError && (
+                        <div style={{ textAlign: 'center', padding: '30px 10px', color: '#88a090', fontSize: '13px' }}>
+                          No se encontraron ciudades con ese nombre. Intenta escribir el nombre oficial o alternativo.
+                        </div>
+                      )}
+
+                      {searchQuery.trim().length < 2 && (
+                        <div style={{ textAlign: 'center', padding: '24px 10px', color: '#688272', fontSize: '13px' }}>
+                          Escribe al menos 2 letras para buscar ciudades de cualquier país.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
     );
   }
+
 
   if (screen === 'loading' || !sessionSnapshot || !loadedCity) {
     return (

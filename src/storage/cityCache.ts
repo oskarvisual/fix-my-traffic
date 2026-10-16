@@ -13,18 +13,27 @@ export class CachedCityRepository implements CityDataRepository {
     this.id = `cached:${inner.id}`;
   }
 
-  getLatestVersion(cityId: string): Promise<number | null> {
-    return this.inner.getLatestVersion(cityId);
+  async getLatestVersion(cityId: string): Promise<number | null> {
+    const cached = await this.cache.get<number>(`latest:${cityId}`).catch(() => undefined);
+    if (typeof cached === 'number') return cached;
+    const v = await this.inner.getLatestVersion(cityId);
+    if (v !== null) {
+      await this.cache.set(`latest:${cityId}`, v).catch(() => undefined);
+    }
+    return v;
   }
 
   async loadCity(cityId: string, version: number): Promise<CityDataBundle> {
     const key = `city:${cityId}@v${version}`;
     const cached = await this.cache.get<CityDataBundle>(key).catch(() => undefined);
     if (cached) return cached;
+    const altCached = await this.cache.get<CityDataBundle>(`${cityId}@${version}`).catch(() => undefined);
+    if (altCached) return altCached;
     const bundle = await this.inner.loadCity(cityId, version);
     await this.cache.set(key, bundle).catch(() => undefined);
     return bundle;
   }
+
 }
 
 /** Tries repositories in order (e.g. Supabase, then static files). */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CITY_CATALOG, findCity } from '../src/data/cityCatalog';
-import { getCityJurisdiction } from '../src/data/jurisdictionBoundary';
+import { CITY_CATALOG, findCity, registerCustomCity, getAllCities, searchCities } from '../src/data/cityCatalog';
+import { getCityJurisdiction, registerCustomJurisdiction } from '../src/data/jurisdictionBoundary';
+
 import { createNewGame } from '../src/simulation/game';
 import { buildRoadNetwork } from '../src/simulation/traffic/network';
 import fs from 'node:fs';
@@ -81,4 +82,54 @@ describe('Multi-City Catalog & Datasets', () => {
       expect(state.projects[0].name).toBeTruthy();
     }
   });
+
+  it('allows registering and discovering custom imported cities dynamically', () => {
+    const testCityId = 'test_montevideo';
+
+    registerCustomCity({
+      id: testCityId,
+      name: 'Montevideo',
+      country: 'Uruguay',
+      flag: '🇺🇾',
+      badgeCode: 'UY',
+      latestDatasetVersion: 1,
+      population: null,
+      difficulty: 'normal',
+      difficultyLabel: 'Medio',
+      initialBudget: 700_000_000,
+      streetsCount: 2400,
+      kmCount: 420,
+      transitSummaryKey: 'city.montevideo.transit',
+      searchTerms: ['montevideo', 'uruguay', testCityId],
+    });
+
+    const all = getAllCities();
+    expect(all.some((c: any) => c.id === testCityId)).toBe(true);
+
+    const searchMatch = searchCities('montevideo');
+    expect(searchMatch.length).toBeGreaterThan(0);
+    expect(searchMatch[0].name).toBe('Montevideo');
+
+    registerCustomJurisdiction({
+      cityId: testCityId,
+      name: 'Montevideo',
+      cameraBounds: [[-56.3, -34.95], [-56.1, -34.8]],
+      minZoom: 11.0,
+      perimeterCoords: [[-56.2, -34.9], [-56.15, -34.85]],
+      invertedMask: {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'Polygon', coordinates: [] },
+      },
+      perimeterLine: {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates: [] },
+      },
+    });
+
+    const jur = getCityJurisdiction(testCityId);
+    expect(jur.name).toBe('Montevideo');
+  });
 });
+

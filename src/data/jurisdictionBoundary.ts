@@ -180,6 +180,33 @@ const JURISDICTIONS: Record<string, CityJurisdiction> = {
   },
 };
 
+// Load custom jurisdictions from localStorage if available
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    const raw = localStorage.getItem('fmt_custom_jurisdictions');
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, CityJurisdiction>;
+      Object.assign(JURISDICTIONS, parsed);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function registerCustomJurisdiction(jur: CityJurisdiction): void {
+  JURISDICTIONS[jur.cityId] = jur;
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('fmt_custom_jurisdictions') || '{}');
+      saved[jur.cityId] = jur;
+      localStorage.setItem('fmt_custom_jurisdictions', JSON.stringify(saved));
+    } catch {
+      // Ignore storage errors
+    }
+  }
+}
+
 export function getCityJurisdiction(cityId: string): CityJurisdiction {
   return JURISDICTIONS[cityId] || JURISDICTIONS.lima;
 }
+

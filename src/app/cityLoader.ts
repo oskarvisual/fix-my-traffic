@@ -58,3 +58,17 @@ export function loadCity(cityId: string, version?: number): Promise<LoadedCity> 
   promise.catch(() => loaded.delete(key));
   return promise;
 }
+
+export function registerLoadedBundle(cityId: string, version: number, bundle: CityDataBundle): void {
+  const network = buildRoadNetwork(bundle.roads);
+  const provider = new MockTrafficProvider(network, hashString(`baseline:${cityId}`));
+  const promise = provider.getTrafficData(cityId).then((traffic) => ({
+    bundle,
+    traffic,
+    ctx: { network, baselineDemand: traffic.baselineDemandVph },
+  }));
+  loaded.set(`${cityId}@${version}`, promise);
+  loaded.set(`${cityId}@latest`, promise);
+}
+
+
