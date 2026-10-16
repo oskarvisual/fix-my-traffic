@@ -77,6 +77,8 @@ describe('Multi-City Catalog & Datasets', () => {
 
       expect(state.cityId).toBe(city.id);
       expect(state.finance.publicBudget).toBe(city.initialBudget);
+      expect(state.projects.length).toBeGreaterThan(0);
+      expect(state.projects[0].name).toBeTruthy();
     }
   });
 });

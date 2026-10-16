@@ -681,46 +681,115 @@ export default function App() {
               {t(`congestion.${lvl.id}` as string)}
             </span>
           ))}
-          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #28372b' }}>
-            <span style={{ fontSize: '11px', color: '#00e676', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '12px', height: '3px', background: '#00e676', display: 'inline-block' }} />
-              Línea 1 Metro (Real)
-            </span>
-            <span style={{ fontSize: '11px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '12px', height: '3px', background: '#f59e0b', display: 'inline-block' }} />
-              Metropolitano BRT
-            </span>
-            <span style={{ fontSize: '11px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '12px', height: '3px', background: '#ef4444', display: 'inline-block' }} />
-              Corredor Rojo / Azul
-            </span>
-          </div>
+          {/* Dynamic Real Public Transit for the selected city */}
+          {loadedCity.bundle.transit.routes.length > 0 && (
+            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #28372b' }}>
+              <p className="eyebrow" style={{ fontSize: '9px', marginBottom: '6px', color: '#94a99b' }}>
+                Red de Transporte ({loadedCity.bundle.roads.city.name})
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '150px', overflowY: 'auto' }}>
+                {loadedCity.bundle.transit.routes.map((r) => (
+                  <span
+                    key={r.id}
+                    style={{
+                      fontSize: '11px',
+                      color: r.colour || '#00e676',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={r.name}
+                  >
+                    <span
+                      style={{
+                        width: '12px',
+                        height: '3px',
+                        background: r.colour || '#00e676',
+                        display: 'inline-block',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {r.ref ? `[${r.ref}] ` : ''}{r.name}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Active Projects List */}
         <div style={{ marginTop: '16px' }}>
-          <p className="eyebrow">{t('tools.activeProjects')}</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <p className="eyebrow" style={{ margin: 0 }}>{t('tools.activeProjects')}</p>
+            <span style={{ fontSize: '10px', color: '#88a090' }}>({state.projects.length})</span>
+          </div>
           {state.projects.length === 0 ? (
             <p className="muted">{t('tools.noProjects')}</p>
           ) : (
-            state.projects.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  background: '#0e1711',
-                  padding: '8px',
-                  marginBottom: '8px',
-                  borderRadius: '3px',
-                }}
-              >
-                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>
-                  {PROJECT_CONFIG[p.typeId]?.icon} {p.name}
+            state.projects.map((p) => {
+              const projectSegmentIndices = p.segmentIds
+                .map((id) => loadedCity.ctx.network.indexById.get(id))
+                .filter((idx): idx is number => idx !== undefined);
+
+              const isSelected =
+                projectSegmentIndices.length > 0 &&
+                selectedRoadIndices.length > 0 &&
+                projectSegmentIndices.some((idx) => selectedRoadIndices.includes(idx));
+
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    background: isSelected ? '#192b1f' : '#0e1711',
+                    border: isSelected ? '1px solid #00f0ff' : '1px solid #203025',
+                    padding: '8px 10px',
+                    marginBottom: '8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title="Haz clic para seleccionar esta obra en el mapa"
+                  onClick={() => {
+                    if (projectSegmentIndices.length > 0) {
+                      setSelectedRoadIndices(projectSegmentIndices);
+                    }
+                  }}
+                >
+                  <div style={{ fontWeight: 'bold', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{PROJECT_CONFIG[p.typeId]?.icon} {p.name}</span>
+                    <span style={{ fontSize: '10px', color: '#b8e86c' }}>{formatPercent(p.progress)}</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#99aa9d', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{t(`project.phase.${p.phase}` as string)}</span>
+                    <span style={{ color: '#88a090', fontSize: '10px' }}>{p.contractor?.name ?? 'Ministerio'}</span>
+                  </div>
+                  <button
+                    className="advance"
+                    style={{
+                      width: '100%',
+                      marginTop: '6px',
+                      padding: '3px 6px',
+                      fontSize: '10px',
+                      borderColor: '#ef4444',
+                      color: '#fca5a5',
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`¿Deseas rescindir el contrato de "${p.name}"? Se recuperará parte del presupuesto y se liberarán los carriles cerrados.`)) {
+                        session?.cancel(p.id);
+                      }
+                    }}
+                  >
+                    ✕ Cancelar / Rescindir Contrato
+                  </button>
                 </div>
-                <div style={{ fontSize: '11px', color: '#99aa9d' }}>
-                  {t(`project.phase.${p.phase}` as string)} · {formatPercent(p.progress)}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </aside>

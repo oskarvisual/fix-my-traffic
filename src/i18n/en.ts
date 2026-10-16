@@ -79,8 +79,8 @@ export const en = {
   'tools.comingSoon': 'Coming soon',
   'tools.hotspots': 'Worst corridors',
   'tools.hotspotsHint': 'Click a road to inspect it.',
-  'tools.activeProjects': 'Active Projects',
-  'tools.noProjects': 'No active projects.',
+  'tools.activeProjects': 'Proyectos Activos (En Obras)',
+  'tools.noProjects': 'No hay proyectos activos en este momento.',
 
   'road.inspect': 'Road inspection',
   'road.unnamed': 'Unnamed corridor',

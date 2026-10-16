@@ -4,6 +4,7 @@
  */
 import { CORRUPTION_CONFIG, ECONOMY_CONFIG, NEWS_CONFIG, POLITICS_CONFIG, TIME_CONFIG } from '../config/game';
 import { findCity } from '../data/cityCatalog';
+import { getInitialCityProjects } from '../data/initialProjects';
 import type { ProjectTypeId } from '../config/projects';
 import { canAffordPublic, depositAnnualBudget, payMonthlySalary, spendPublic } from './finance/budget';
 import { updateApproval } from './politics/approval';
@@ -92,7 +93,7 @@ export function createNewGame(options: NewGameOptions, ctx: SimulationContext): 
       investigationActive: false,
       lowApprovalMonths: 0,
     },
-    projects: [],
+    projects: getInitialCityProjects(options.cityId, ctx.network),
     news: [],
     roadReport: {},
     nextId: 1,
