@@ -35,6 +35,9 @@ export function payMonthlySalary(finance: GameState['finance']): GameState['fina
   return { ...finance, personalBalance: finance.personalBalance + ECONOMY_CONFIG.ministerMonthlySalary };
 }
 
-export function depositAnnualBudget(finance: GameState['finance']): GameState['finance'] {
-  return { ...finance, publicBudget: finance.publicBudget + ECONOMY_CONFIG.annualTransportBudget };
+export function depositAnnualBudget(
+  finance: GameState['finance'],
+  amount: number = ECONOMY_CONFIG.annualTransportBudget,
+): GameState['finance'] {
+  return { ...finance, publicBudget: finance.publicBudget + amount };
 }

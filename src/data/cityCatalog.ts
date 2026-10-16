@@ -13,28 +13,99 @@ export interface CityCatalogEntry {
   id: string;
   name: string;
   country: string;
+  flag: string;
+  badgeCode: string;
   latestDatasetVersion: number;
   population: SourcedFact<number> | null;
   difficulty: 'easy' | 'normal' | 'hard' | 'extreme';
-  /** i18n key with a short description of the public transport system. */
+  difficultyLabel: string;
+  initialBudget: number;
+  streetsCount: number;
+  kmCount: number;
   transitSummaryKey: string;
   searchTerms: string[];
 }
 
 export const CITY_CATALOG: CityCatalogEntry[] = [
   {
+    id: 'buenos_aires',
+    name: 'Buenos Aires',
+    country: 'Argentina',
+    flag: '🇦🇷',
+    badgeCode: 'AR',
+    latestDatasetVersion: 1,
+    population: {
+      value: 3_120_612,
+      source: 'INDEC, Censo Nacional 2022 (Ciudad Autónoma de Buenos Aires)',
+      kind: 'real',
+    },
+    difficulty: 'easy',
+    difficultyLabel: 'Fácil',
+    initialBudget: 850_000_000,
+    streetsCount: 3670,
+    kmCount: 481,
+    transitSummaryKey: 'city.buenos_aires.transit',
+    searchTerms: ['buenos aires', 'argentina', 'caba', 'porteño', 'subte'],
+  },
+  {
+    id: 'santiago',
+    name: 'Santiago',
+    country: 'Chile',
+    flag: '🇨🇱',
+    badgeCode: 'CL',
+    latestDatasetVersion: 1,
+    population: {
+      value: 7_112_808,
+      source: 'INE Chile, Proyecciones 2024 (Gran Santiago)',
+      kind: 'real',
+    },
+    difficulty: 'normal',
+    difficultyLabel: 'Medio',
+    initialBudget: 750_000_000,
+    streetsCount: 3787,
+    kmCount: 630,
+    transitSummaryKey: 'city.santiago.transit',
+    searchTerms: ['santiago', 'chile', 'scl', 'metro de santiago'],
+  },
+  {
     id: 'lima',
     name: 'Lima',
-    country: 'Peru',
+    country: 'Perú',
+    flag: '🇵🇪',
+    badgeCode: 'PE',
     latestDatasetVersion: 2,
     population: {
       value: 9_569_468,
-      source: 'INEI, Censos Nacionales 2017 (Lima Province + Constitutional Province of Callao)',
+      source: 'INEI, Censos Nacionales 2017 (Provincia de Lima + Callao)',
       kind: 'real',
     },
     difficulty: 'hard',
+    difficultyLabel: 'Difícil',
+    initialBudget: 650_000_000,
+    streetsCount: 2980,
+    kmCount: 554,
     transitSummaryKey: 'city.lima.transit',
-    searchTerms: ['lima', 'peru', 'perú', 'callao'],
+    searchTerms: ['lima', 'peru', 'perú', 'callao', 'metropolitano'],
+  },
+  {
+    id: 'cdmx',
+    name: 'Ciudad de México',
+    country: 'México',
+    flag: '🇲🇽',
+    badgeCode: 'MX',
+    latestDatasetVersion: 1,
+    population: {
+      value: 9_209_944,
+      source: 'INEGI, Censo de Población y Vivienda 2020 (CDMX)',
+      kind: 'real',
+    },
+    difficulty: 'extreme',
+    difficultyLabel: 'Muy Difícil',
+    initialBudget: 1_400_000_000,
+    streetsCount: 5223,
+    kmCount: 1058,
+    transitSummaryKey: 'city.cdmx.transit',
+    searchTerms: ['cdmx', 'mexico', 'méxico', 'df', 'distrito federal', 'metro cdmx'],
   },
 ];
 

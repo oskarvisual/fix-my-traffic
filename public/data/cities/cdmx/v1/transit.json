@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "cityId": "cdmx",
+  "datasetVersion": 1,
+  "attribution": "© OpenStreetMap contributors · STC Metro CDMX · Metrobús CDMX",
+  "routes": [
+    {
+      "id": "metro-cdmx-l1",
+      "name": "Línea 1 del Metro CDMX (Observatorio — Pantitlán)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L1",
+      "colour": "#ec4899",
+      "lines": [
+        [
+          [
+            -99.2,
+            19.398
+          ],
+          [
+            -99.187,
+            19.404
+          ],
+          [
+            -99.175,
+            19.418
+          ],
+          [
+            -99.162,
+            19.426
+          ],
+          [
+            -99.15,
+            19.428
+          ],
+          [
+            -99.138,
+            19.427
+          ],
+          [
+            -99.124,
+            19.428
+          ],
+          [
+            -99.1,
+            19.423
+          ],
+          [
+            -99.072,
+            19.416
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-cdmx-l2",
+      "name": "Línea 2 del Metro CDMX (Cuatro Caminos — Tasqueña)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L2",
+      "colour": "#3b82f6",
+      "lines": [
+        [
+          [
+            -99.215,
+            19.458
+          ],
+          [
+            -99.19,
+            19.456
+          ],
+          [
+            -99.168,
+            19.448
+          ],
+          [
+            -99.148,
+            19.437
+          ],
+          [
+            -99.133,
+            19.433
+          ],
+          [
+            -99.133,
+            19.42
+          ],
+          [
+            -99.135,
+            19.4
+          ],
+          [
+            -99.138,
+            19.378
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-cdmx-l3",
+      "name": "Línea 3 del Metro CDMX (Indios Verdes — Universidad)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L3",
+      "colour": "#84cc16",
+      "lines": [
+        [
+          [
+            -99.122,
+            19.475
+          ],
+          [
+            -99.138,
+            19.46
+          ],
+          [
+            -99.147,
+            19.444
+          ],
+          [
+            -99.151,
+            19.433
+          ],
+          [
+            -99.153,
+            19.418
+          ],
+          [
+            -99.156,
+            19.4
+          ],
+          [
+            -99.16,
+            19.38
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-cdmx-l7",
+      "name": "Línea 7 del Metro CDMX (El Rosario — Barranca del Muerto)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L7",
+      "colour": "#f97316",
+      "lines": [
+        [
+          [
+            -99.195,
+            19.474
+          ],
+          [
+            -99.192,
+            19.452
+          ],
+          [
+            -99.191,
+            19.435
+          ],
+          [
+            -99.189,
+            19.42
+          ],
+          [
+            -99.187,
+            19.4
+          ],
+          [
+            -99.188,
+            19.372
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-cdmx-l9",
+      "name": "Línea 9 del Metro CDMX (Tacubaya — Pantitlán)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L9",
+      "colour": "#78350f",
+      "lines": [
+        [
+          [
+            -99.187,
+            19.403
+          ],
+          [
+            -99.168,
+            19.404
+          ],
+          [
+            -99.153,
+            19.404
+          ],
+          [
+            -99.133,
+            19.406
+          ],
+          [
+            -99.11,
+            19.406
+          ],
+          [
+            -99.088,
+            19.407
+          ],
+          [
+            -99.072,
+            19.415
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "mb-cdmx-l1",
+      "name": "Metrobús Línea 1 (Corredor Insurgentes)",
+      "mode": "bus",
+      "ref": "MB1",
+      "colour": "#dc2626",
+      "lines": [
+        [
+          [
+            -99.125,
+            19.475
+          ],
+          [
+            -99.142,
+            19.458
+          ],
+          [
+            -99.157,
+            19.438
+          ],
+          [
+            -99.166,
+            19.418
+          ],
+          [
+            -99.172,
+            19.398
+          ],
+          [
+            -99.178,
+            19.375
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "mb-cdmx-l7",
+      "name": "Metrobús Línea 7 (Paseo de la Reforma)",
+      "mode": "bus",
+      "ref": "MB7",
+      "colour": "#10b981",
+      "lines": [
+        [
+          [
+            -99.126,
+            19.474
+          ],
+          [
+            -99.135,
+            19.45
+          ],
+          [
+            -99.15,
+            19.435
+          ],
+          [
+            -99.17,
+            19.425
+          ],
+          [
+            -99.195,
+            19.424
+          ],
+          [
+            -99.215,
+            19.428
+          ]
+        ]
+      ]
+    }
+  ]
+}

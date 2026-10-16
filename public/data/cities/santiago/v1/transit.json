@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "cityId": "santiago",
+  "datasetVersion": 1,
+  "attribution": "© OpenStreetMap contributors · Metro de Santiago · Red Movilidad",
+  "routes": [
+    {
+      "id": "metro-scl-l1",
+      "name": "Línea 1 del Metro de Santiago (San Pablo — Los Dominicos)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L1",
+      "colour": "#e11d48",
+      "lines": [
+        [
+          [
+            -70.718,
+            -33.446
+          ],
+          [
+            -70.697,
+            -33.45
+          ],
+          [
+            -70.678,
+            -33.451
+          ],
+          [
+            -70.66,
+            -33.447
+          ],
+          [
+            -70.648,
+            -33.443
+          ],
+          [
+            -70.634,
+            -33.437
+          ],
+          [
+            -70.618,
+            -33.428
+          ],
+          [
+            -70.602,
+            -33.418
+          ],
+          [
+            -70.585,
+            -33.411
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-scl-l2",
+      "name": "Línea 2 del Metro de Santiago (Vespucio Norte — Hospital El Pino)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L2",
+      "colour": "#eab308",
+      "lines": [
+        [
+          [
+            -70.654,
+            -33.41
+          ],
+          [
+            -70.652,
+            -33.425
+          ],
+          [
+            -70.652,
+            -33.438
+          ],
+          [
+            -70.652,
+            -33.448
+          ],
+          [
+            -70.651,
+            -33.462
+          ],
+          [
+            -70.651,
+            -33.475
+          ],
+          [
+            -70.653,
+            -33.488
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-scl-l3",
+      "name": "Línea 3 del Metro de Santiago (Plaza Quilicura — F. Castillo Velasco)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L3",
+      "colour": "#92400e",
+      "lines": [
+        [
+          [
+            -70.675,
+            -33.41
+          ],
+          [
+            -70.66,
+            -33.425
+          ],
+          [
+            -70.653,
+            -33.435
+          ],
+          [
+            -70.648,
+            -33.444
+          ],
+          [
+            -70.635,
+            -33.45
+          ],
+          [
+            -70.615,
+            -33.453
+          ],
+          [
+            -70.595,
+            -33.454
+          ],
+          [
+            -70.575,
+            -33.45
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-scl-l5",
+      "name": "Línea 5 del Metro de Santiago (Plaza de Maipú — Vicente Valdés)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L5",
+      "colour": "#16a34a",
+      "lines": [
+        [
+          [
+            -70.71,
+            -33.44
+          ],
+          [
+            -70.686,
+            -33.44
+          ],
+          [
+            -70.665,
+            -33.44
+          ],
+          [
+            -70.648,
+            -33.438
+          ],
+          [
+            -70.633,
+            -33.438
+          ],
+          [
+            -70.627,
+            -33.45
+          ],
+          [
+            -70.618,
+            -33.468
+          ],
+          [
+            -70.605,
+            -33.485
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-scl-l6",
+      "name": "Línea 6 del Metro de Santiago (Cerrillos — Los Leones)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L6",
+      "colour": "#9333ea",
+      "lines": [
+        [
+          [
+            -70.705,
+            -33.488
+          ],
+          [
+            -70.68,
+            -33.482
+          ],
+          [
+            -70.655,
+            -33.475
+          ],
+          [
+            -70.635,
+            -33.462
+          ],
+          [
+            -70.612,
+            -33.445
+          ],
+          [
+            -70.604,
+            -33.422
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "red-alameda",
+      "name": "Corredor Alameda — Providencia (Red Movilidad BRT)",
+      "mode": "bus",
+      "ref": "RED",
+      "colour": "#f97316",
+      "lines": [
+        [
+          [
+            -70.7,
+            -33.451
+          ],
+          [
+            -70.678,
+            -33.451
+          ],
+          [
+            -70.658,
+            -33.447
+          ],
+          [
+            -70.645,
+            -33.442
+          ],
+          [
+            -70.632,
+            -33.435
+          ],
+          [
+            -70.618,
+            -33.426
+          ],
+          [
+            -70.603,
+            -33.418
+          ]
+        ]
+      ]
+    }
+  ]
+}

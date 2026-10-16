@@ -20,9 +20,11 @@ import {
   type SubwayStationPoint,
 } from './simulation/projects/subwayHelper';
 import { t } from './i18n';
+import { CITY_CATALOG, findCity } from './data/cityCatalog';
 
 export default function App() {
   const [screen, setScreen] = useState<'title' | 'city' | 'loading' | 'game'>('title');
+  const [loadingCityId, setLoadingCityId] = useState<string>('lima');
   const [loadedCity, setLoadedCity] = useState<LoadedCity | null>(null);
   const [session, setSession] = useState<GameSession | null>(null);
   const sessionRef = useRef<GameSession | null>(null);
@@ -187,6 +189,7 @@ export default function App() {
     setSubwayDraftStations([]);
     setMapLayerMode('surface');
     setResumeError(null);
+    setLoadingCityId(cityId);
     setScreen('loading');
     try {
       const city = await loadCity(cityId);
@@ -368,74 +371,98 @@ export default function App() {
   }
 
   if (screen === 'city') {
+    const difficultyBadges: Record<string, { label: string; color: string; bg: string }> = {
+      easy: { label: 'Fácil', color: '#4ade80', bg: 'rgba(34, 197, 94, 0.15)' },
+      normal: { label: 'Medio', color: '#fde047', bg: 'rgba(234, 179, 8, 0.15)' },
+      hard: { label: 'Difícil', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.15)' },
+      extreme: { label: 'Muy Difícil', color: '#f87171', bg: 'rgba(239, 68, 68, 0.2)' },
+    };
+
+    const cityCoordinates: Record<string, string> = {
+      buenos_aires: '34° S · 58° W',
+      santiago: '33° S · 70° W',
+      lima: '12° S · 77° W',
+      cdmx: '19° N · 99° W',
+    };
+
     return (
-      <main className="city-screen">
+      <main className="city-screen" style={{ minHeight: '100vh', padding: '6vh max(5vw, 24px)' }}>
         <button className="back" onClick={() => setScreen('title')}>
           ← {t('city.back')}
         </button>
         <p className="eyebrow">{t('city.selectTitle')}</p>
-        <h1>Select your city</h1>
+        <h1 style={{ marginBottom: '24px' }}>Select your city</h1>
 
-        {/* Lima Card - Playable */}
-        <section className="city-card">
-          <div className="map-mark">
-            PE
-            <br />
-            <small>12° S · 77° W</small>
-          </div>
-          <div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-              <p className="eyebrow" style={{ margin: 0 }}>Playable now · 2,980 Real Streets · Supabase Synced</p>
-            </div>
-            <h2>Lima, Peru</h2>
-            <p>{t('city.lima.transit')}</p>
-            <dl>
-              <div>
-                <dt>{t('city.difficulty')}</dt>
-                <dd>{t('difficulty.hard')}</dd>
-              </div>
-              <div>
-                <dt>{t('city.annualBudget')}</dt>
-                <dd>$650M</dd>
-              </div>
-              <div>
-                <dt>{t('city.roadNetwork')}</dt>
-                <dd>2,980 Streets (554 km)</dd>
-              </div>
-            </dl>
-            <button
-              className="primary"
-              style={{ marginTop: '20px' }}
-              onClick={() => startNewGame('lima')}
-            >
-              {t('city.becomeMinister')} <span>→</span>
-            </button>
-          </div>
-        </section>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', maxWidth: '1100px', width: '100%' }}>
+          {CITY_CATALOG.map((city) => {
+            const badge = difficultyBadges[city.difficulty] ?? difficultyBadges.normal;
+            return (
+              <section key={city.id} className="city-card" style={{ margin: 0, padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                  <div className="map-mark" style={{ minHeight: '90px', width: '90px', padding: '14px', fontSize: '26px', flexShrink: 0 }}>
+                    {city.badgeCode}
+                    <small style={{ marginTop: '16px', fontSize: '9px' }}>{cityCoordinates[city.id] ?? ''}</small>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          color: badge.color,
+                          backgroundColor: badge.bg,
+                          border: `1px solid ${badge.color}40`,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {badge.label}
+                      </span>
+                      <small style={{ color: '#88a090', fontSize: '12px' }}>{city.flag}</small>
+                    </div>
+                    <h2 style={{ fontSize: '22px', margin: '4px 0 6px' }}>{city.name}, {city.country}</h2>
+                    <p style={{ fontSize: '12px', margin: 0, color: '#a0b4a4', lineHeight: 1.45 }}>
+                      {t(city.transitSummaryKey)}
+                    </p>
+                  </div>
+                </div>
 
-        {/* Coming Soon Cities */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', maxWidth: '760px' }}>
-          <div className="city-card coming-soon" style={{ padding: '16px', marginBottom: 0 }}>
+                <dl style={{ margin: '8px 0 0', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  <div>
+                    <dt>{t('city.annualBudget')}</dt>
+                    <dd style={{ color: '#b8e86c', fontSize: '14px' }}>${(city.initialBudget / 1e6).toFixed(0)}M</dd>
+                  </div>
+                  <div>
+                    <dt>{t('city.roadNetwork')}</dt>
+                    <dd style={{ fontSize: '12px' }}>{city.streetsCount.toLocaleString()} Calles</dd>
+                  </div>
+                  <div>
+                    <dt>{t('city.population')}</dt>
+                    <dd style={{ fontSize: '12px' }}>{city.population?.value ? (city.population.value / 1e6).toFixed(1) + 'M hab.' : 'N/A'}</dd>
+                  </div>
+                </dl>
+
+                <button
+                  className="primary"
+                  style={{ width: '100%', marginTop: '6px', padding: '10px 14px', fontSize: '13px' }}
+                  onClick={() => startNewGame(city.id)}
+                >
+                  {t('city.becomeMinister')} <span>→</span>
+                </button>
+              </section>
+            );
+          })}
+        </div>
+
+        {/* Coming soon note */}
+        <div style={{ marginTop: '24px', maxWidth: '1100px', width: '100%' }}>
+          <div className="city-card coming-soon" style={{ padding: '14px 20px', margin: 0 }}>
             <div>
-              <span className="eyebrow" style={{ color: '#eab308' }}>Coming Soon</span>
-              <h3 style={{ margin: '4px 0' }}>Bogotá, Colombia</h3>
-              <p style={{ fontSize: '12px', margin: 0 }}>TransMilenio BRT, Séptima corridor and Metro Line 1 under construction.</p>
-            </div>
-          </div>
-
-          <div className="city-card coming-soon" style={{ padding: '16px', marginBottom: 0 }}>
-            <div>
-              <span className="eyebrow" style={{ color: '#eab308' }}>Coming Soon</span>
-              <h3 style={{ margin: '4px 0' }}>Santiago, Chile</h3>
-              <p style={{ fontSize: '12px', margin: 0 }}>Metro de Santiago (7 active lines) & Red Metropolitana electrified bus grid.</p>
-            </div>
-          </div>
-
-          <div className="city-card coming-soon" style={{ padding: '16px', marginBottom: 0 }}>
-            <div>
-              <span className="eyebrow" style={{ color: '#eab308' }}>Coming Soon</span>
-              <h3 style={{ margin: '4px 0' }}>Buenos Aires, Argentina</h3>
-              <p style={{ fontSize: '12px', margin: 0 }}>Historic Subte network (Lines A-H), 9 de Julio Metrobús and urban tollways.</p>
+              <span className="eyebrow" style={{ color: '#eab308', margin: 0 }}>Próximamente</span>
+              <h3 style={{ margin: '4px 0', fontSize: '15px' }}>Bogotá, Colombia</h3>
+              <p style={{ fontSize: '12px', margin: 0 }}>TransMilenio BRT, Corredor Carrera Séptima y Metro Línea 1 en construcción.</p>
             </div>
           </div>
         </div>
@@ -446,7 +473,7 @@ export default function App() {
   if (screen === 'loading' || !sessionSnapshot || !loadedCity) {
     return (
       <main className="start-screen">
-        <h2>{t('city.loading', { city: 'Lima' })}</h2>
+        <h2>{t('city.loading', { city: findCity(loadingCityId)?.name ?? 'City' })}</h2>
       </main>
     );
   }
@@ -477,7 +504,8 @@ export default function App() {
           FIX MY <i>TRAFFIC</i>
         </a>
         <div className="city-name">
-          Lima, Peru <small>{t('hud.simulatedBadge')}</small>
+          {loadedCity.bundle.roads.city.name}, {loadedCity.bundle.roads.city.country}{' '}
+          <small>{loadedCity.bundle.roads.city.name} · Supabase Synced</small>
         </div>
 
         <div className="metric">
@@ -563,6 +591,7 @@ export default function App() {
 
       {/* Main Map with Google Maps Traffic + Public Transit */}
       <TrafficMap
+        cityId={loadedCity.bundle.roads.city.id}
         network={loadedCity.ctx.network}
         traffic={traffic}
         transit={loadedCity.bundle.transit}

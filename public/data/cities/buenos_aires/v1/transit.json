@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "cityId": "buenos_aires",
+  "datasetVersion": 1,
+  "attribution": "© OpenStreetMap contributors · Emova Movilidad S.A. · Subte de Buenos Aires",
+  "routes": [
+    {
+      "id": "subte-a",
+      "name": "Línea A del Subte (Plaza de Mayo — San Pedrito)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "A",
+      "colour": "#1ca4cb",
+      "lines": [
+        [
+          [
+            -58.371,
+            -34.608
+          ],
+          [
+            -58.384,
+            -34.609
+          ],
+          [
+            -58.397,
+            -34.609
+          ],
+          [
+            -58.41,
+            -34.61
+          ],
+          [
+            -58.423,
+            -34.614
+          ],
+          [
+            -58.435,
+            -34.618
+          ],
+          [
+            -58.448,
+            -34.621
+          ],
+          [
+            -58.462,
+            -34.625
+          ],
+          [
+            -58.472,
+            -34.629
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "subte-b",
+      "name": "Línea B del Subte (Leandro N. Alem — J.M. de Rosas)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "B",
+      "colour": "#c20924",
+      "lines": [
+        [
+          [
+            -58.37,
+            -34.603
+          ],
+          [
+            -58.383,
+            -34.604
+          ],
+          [
+            -58.396,
+            -34.604
+          ],
+          [
+            -58.411,
+            -34.604
+          ],
+          [
+            -58.428,
+            -34.604
+          ],
+          [
+            -58.444,
+            -34.596
+          ],
+          [
+            -58.462,
+            -34.587
+          ],
+          [
+            -58.478,
+            -34.577
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "subte-c",
+      "name": "Línea C del Subte (Retiro — Constitución)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "C",
+      "colour": "#003ea1",
+      "lines": [
+        [
+          [
+            -58.375,
+            -34.592
+          ],
+          [
+            -58.379,
+            -34.598
+          ],
+          [
+            -58.381,
+            -34.604
+          ],
+          [
+            -58.381,
+            -34.612
+          ],
+          [
+            -58.381,
+            -34.62
+          ],
+          [
+            -58.381,
+            -34.628
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "subte-d",
+      "name": "Línea D del Subte (Catedral — Congreso de Tucumán)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "D",
+      "colour": "#217861",
+      "lines": [
+        [
+          [
+            -58.374,
+            -34.608
+          ],
+          [
+            -58.38,
+            -34.601
+          ],
+          [
+            -58.388,
+            -34.595
+          ],
+          [
+            -58.399,
+            -34.59
+          ],
+          [
+            -58.412,
+            -34.584
+          ],
+          [
+            -58.423,
+            -34.579
+          ],
+          [
+            -58.438,
+            -34.572
+          ],
+          [
+            -58.452,
+            -34.563
+          ],
+          [
+            -58.462,
+            -34.555
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "subte-e",
+      "name": "Línea E del Subte (Retiro — Plaza de los Virreyes)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "E",
+      "colour": "#6b297e",
+      "lines": [
+        [
+          [
+            -58.374,
+            -34.592
+          ],
+          [
+            -58.371,
+            -34.602
+          ],
+          [
+            -58.375,
+            -34.609
+          ],
+          [
+            -58.382,
+            -34.618
+          ],
+          [
+            -58.393,
+            -34.623
+          ],
+          [
+            -58.407,
+            -34.626
+          ],
+          [
+            -58.423,
+            -34.629
+          ],
+          [
+            -58.442,
+            -34.636
+          ],
+          [
+            -58.462,
+            -34.643
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "subte-h",
+      "name": "Línea H del Subte (Facultad de Derecho — Hospitales)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "H",
+      "colour": "#f4cc21",
+      "lines": [
+        [
+          [
+            -58.391,
+            -34.583
+          ],
+          [
+            -58.398,
+            -34.594
+          ],
+          [
+            -58.404,
+            -34.604
+          ],
+          [
+            -58.408,
+            -34.614
+          ],
+          [
+            -58.41,
+            -34.624
+          ],
+          [
+            -58.411,
+            -34.634
+          ],
+          [
+            -58.412,
+            -34.642
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metrobus-9julio",
+      "name": "Metrobús 9 de Julio (Retiro — Constitución)",
+      "mode": "bus",
+      "ref": "MB9J",
+      "colour": "#f59e0b",
+      "lines": [
+        [
+          [
+            -58.379,
+            -34.594
+          ],
+          [
+            -58.38,
+            -34.6
+          ],
+          [
+            -58.382,
+            -34.606
+          ],
+          [
+            -58.381,
+            -34.614
+          ],
+          [
+            -58.38,
+            -34.623
+          ],
+          [
+            -58.381,
+            -34.628
+          ]
+        ]
+      ]
+    }
+  ]
+}

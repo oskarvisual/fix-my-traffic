@@ -26,7 +26,13 @@ export const en = {
   'city.simulatedTag': 'simulated',
   'city.gameValueTag': 'game value',
   'city.lima.transit':
-    'Línea 1 del Metro, Metropolitano BRT, Corredores Complementarios (Rojo, Azul, Morado) y red arterial.',
+    'Línea 1 del Metro, Línea 2 subterránea, Metropolitano BRT, Corredores Complementarios y congestión costera.',
+  'city.buenos_aires.transit':
+    'Red histórica de Subte (Líneas A, B, C, D, E, H), Metrobús 9 de Julio y cuadrícula ortogonal de avenidas.',
+  'city.santiago.transit':
+    'Metro de Santiago (Líneas 1, 2, 3, 5, 6), red de buses eléctricos Red Movilidad y cuellos de botella geográficos.',
+  'city.cdmx.transit':
+    'Sistema de Transporte Colectivo Metro (Líneas 1, 2, 3, 7, 9), Metrobús Insurgentes y Reforma, y megaciudad de 20M+ hab.',
   'difficulty.easy': 'Easy',
   'difficulty.normal': 'Normal',
   'difficulty.hard': 'Hard',

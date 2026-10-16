@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -8,16 +8,13 @@ import type { CityTransitDataset } from '../data/cityDataset';
 import type { Project } from '../simulation/state';
 import { CONGESTION_LEVELS } from '../config/traffic';
 import { env } from '../config/env';
-import {
-  LIMA_CAMERA_BOUNDS,
-  LIMA_INVERTED_MASK,
-  LIMA_PERIMETER_LINE,
-} from '../data/jurisdictionBoundary';
+import { getCityJurisdiction } from '../data/jurisdictionBoundary';
 
 // Explicit worker URL for MapLibre
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 interface TrafficMapProps {
+  cityId?: string;
   network: RoadNetwork;
   traffic: TrafficState;
   transit?: CityTransitDataset;
@@ -34,6 +31,7 @@ interface TrafficMapProps {
 }
 
 export const TrafficMap = ({
+  cityId,
   network,
   traffic,
   transit,
@@ -48,6 +46,7 @@ export const TrafficMap = ({
   onDoubleClickSegment,
   onAddSubwayStation,
 }: TrafficMapProps) => {
+  const jurisdiction = useMemo(() => getCityJurisdiction(cityId ?? 'lima'), [cityId]);
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const isLoadedRef = useRef(false);
@@ -101,9 +100,9 @@ export const TrafficMap = ({
       style: env.mapStyleUrl,
       center,
       zoom: 13,
-      minZoom: 11.2,
+      minZoom: jurisdiction.minZoom,
       maxZoom: 18,
-      maxBounds: LIMA_CAMERA_BOUNDS,
+      maxBounds: jurisdiction.cameraBounds,
       attributionControl: { compact: true },
     });
 
@@ -326,7 +325,7 @@ export const TrafficMap = ({
       // Exterior Fog of War / Jurisdiction Boundary Mask
       map.addSource('jurisdiction-mask', {
         type: 'geojson',
-        data: LIMA_INVERTED_MASK,
+        data: jurisdiction.invertedMask,
       });
 
       map.addLayer({
@@ -341,7 +340,7 @@ export const TrafficMap = ({
 
       map.addSource('jurisdiction-line', {
         type: 'geojson',
-        data: LIMA_PERIMETER_LINE,
+        data: jurisdiction.perimeterLine,
       });
 
       map.addLayer({
@@ -527,7 +526,7 @@ export const TrafficMap = ({
       isLoadedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [network, center, transit]);
+  }, [network, center, transit, jurisdiction]);
 
   // Sync player-built subways on the map
   useEffect(() => {

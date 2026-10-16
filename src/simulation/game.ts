@@ -3,6 +3,7 @@
  * No React, no MapLibre, no I/O.
  */
 import { CORRUPTION_CONFIG, ECONOMY_CONFIG, NEWS_CONFIG, POLITICS_CONFIG, TIME_CONFIG } from '../config/game';
+import { findCity } from '../data/cityCatalog';
 import type { ProjectTypeId } from '../config/projects';
 import { canAffordPublic, depositAnnualBudget, payMonthlySalary, spendPublic } from './finance/budget';
 import { updateApproval } from './politics/approval';
@@ -64,6 +65,9 @@ export interface NewGameOptions {
 }
 
 export function createNewGame(options: NewGameOptions, ctx: SimulationContext): GameState {
+  const cityEntry = findCity(options.cityId);
+  const cityBudget = cityEntry?.initialBudget ?? ECONOMY_CONFIG.initialPublicBudget;
+
   const draft: GameState = {
     schemaVersion: GAME_STATE_SCHEMA_VERSION,
     id: options.id ?? `game-${options.seed.toString(36)}`,
@@ -75,7 +79,7 @@ export function createNewGame(options: NewGameOptions, ctx: SimulationContext): 
     status: 'active',
     clock: { day: 0, dayProgress: 0 },
     finance: {
-      publicBudget: ECONOMY_CONFIG.initialPublicBudget,
+      publicBudget: cityBudget,
       personalBalance: ECONOMY_CONFIG.initialPersonalBalance,
       totalPublicSpent: 0,
       totalBribesReceived: 0,
@@ -287,12 +291,13 @@ export function advanceDay(state: GameState, ctx: SimulationContext): GameState 
   next = addNews(next, events);
 
   if (isFirstDayOfYear(day)) {
-    next = addNews({ ...next, finance: depositAnnualBudget(next.finance) }, [
+    const annualBudget = findCity(state.cityId)?.initialBudget ?? ECONOMY_CONFIG.annualTransportBudget;
+    next = addNews({ ...next, finance: depositAnnualBudget(next.finance, annualBudget) }, [
       {
         day,
         severity: 'info',
         key: 'news.annualBudget',
-        params: { amount: ECONOMY_CONFIG.annualTransportBudget },
+        params: { amount: annualBudget },
       },
     ]);
   }
