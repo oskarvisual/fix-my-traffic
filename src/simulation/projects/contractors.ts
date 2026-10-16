@@ -62,13 +62,13 @@ export function generateContractorBids(
     ],
     cons: [
       'Alto riesgo de paralizaciones y arbitrajes',
-      'Historial de exigir adendas por imprevistos técnicos',
+      'Historial de exigir adendas por imprevistos técnicos (+8% riesgo de auditoría)',
     ],
     costMultiplier: 0.84,
     durationMultiplier: 1.15,
     delayRisk: 0.40,
     bribeOffer: 0,
-    corruptionRisk: 0,
+    corruptionRisk: 0.08,
   };
 
   // 3. Corrupt Mega-Contractor ("El Club de la Construcción")
@@ -95,7 +95,7 @@ export function generateContractorBids(
     durationMultiplier: 0.95,
     delayRisk: 0.20,
     bribeOffer: bribeAmount,
-    corruptionRisk: typeId === 'subway' || typeId === 'elevatedMetro' ? 0.32 : 0.18,
+    corruptionRisk: typeId === 'subway' || typeId === 'elevatedMetro' ? 0.35 : 0.22,
   };
 
   return [techBid, lowBid, corruptBid];

@@ -1053,7 +1053,17 @@ export default function App() {
           </b>
         </div>
 
-        <div className="metric">
+        <div
+          className="metric"
+          title={`Sospecha de Corrupción (Fiscalía / Contraloría): ${formatPercent(state.politics.corruption)}.\n${
+            state.politics.corruption === 0
+              ? 'Gestión 100% limpia sin denuncias ni coimas. Aumenta si aceptas sobornos de contratistas o adjudicas a constructoras cuestionadas.'
+              : state.politics.corruption >= 0.35
+              ? '¡PELIGRO! La Fiscalía ha abierto diligencias penales contra tu despacho.'
+              : 'Atención: Existen sospechas y denuncias en medios de prensa por tus contratos adjudicados.'
+          }`}
+          style={{ cursor: 'help' }}
+        >
           <small>{t('hud.corruption')}</small>
           <b style={{ color: state.politics.corruption >= 0.50 ? '#ef4444' : state.politics.corruption >= 0.25 ? '#eab308' : '#22c55e' }}>
             {formatPercent(state.politics.corruption)}
@@ -1583,11 +1593,11 @@ export default function App() {
                       <div className="contractor-name">
                         <span>{bid.name}</span>
                         {bid.bribeOffer > 0 ? (
-                          <span className="bribe-badge">Soborno: +{formatCurrency(bid.bribeOffer)}</span>
+                          <span className="bribe-badge">💰 Soborno: +{formatCurrency(bid.bribeOffer)}</span>
                         ) : bid.reputation === 'excellent' ? (
-                          <span className="tech-badge">ISO Auditoría</span>
+                          <span className="tech-badge">🛡️ Auditoría Limpia</span>
                         ) : (
-                          <span className="risk-badge">Low Cost</span>
+                          <span className="risk-badge">⚠️ Riesgo Auditoría</span>
                         )}
                       </div>
                       <p style={{ margin: '4px 0', fontSize: '11px', color: '#c4cec5' }}>
@@ -1605,8 +1615,12 @@ export default function App() {
                       </ul>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '10px', color: '#889988' }}>
                         <span>Costo: {Math.round(bid.costMultiplier * 100)}%</span>
-                        {bid.corruptionRisk > 0 && (
-                          <span style={{ color: '#ef4444' }}>Riesgo fiscal: +{Math.round(bid.corruptionRisk * 100)}%</span>
+                        {bid.corruptionRisk > 0 ? (
+                          <span style={{ color: '#ef4444', fontWeight: 700 }}>
+                            🚨 Sospecha fiscal: +{Math.round(bid.corruptionRisk * 100)}%
+                          </span>
+                        ) : (
+                          <span style={{ color: '#86efac' }}>✓ 0% sospecha fiscal</span>
                         )}
                       </div>
                     </div>
@@ -1721,11 +1735,11 @@ export default function App() {
                       <div className="contractor-name">
                         <span>{bid.name}</span>
                         {bid.bribeOffer > 0 ? (
-                          <span className="bribe-badge">Soborno: +{formatCurrency(bid.bribeOffer)}</span>
+                          <span className="bribe-badge">💰 Soborno: +{formatCurrency(bid.bribeOffer)}</span>
                         ) : bid.reputation === 'excellent' ? (
-                          <span className="tech-badge">ISO Auditoría</span>
+                          <span className="tech-badge">🛡️ Auditoría Limpia</span>
                         ) : (
-                          <span className="risk-badge">Low Cost</span>
+                          <span className="risk-badge">⚠️ Riesgo Auditoría</span>
                         )}
                       </div>
                       <p style={{ margin: '4px 0', fontSize: '11px', color: '#c4cec5' }}>
@@ -1743,8 +1757,12 @@ export default function App() {
                       </ul>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '10px', color: '#889988' }}>
                         <span>Costo: {Math.round(bid.costMultiplier * 100)}%</span>
-                        {bid.corruptionRisk > 0 && (
-                          <span style={{ color: '#ef4444' }}>Riesgo fiscal: +{Math.round(bid.corruptionRisk * 100)}%</span>
+                        {bid.corruptionRisk > 0 ? (
+                          <span style={{ color: '#ef4444', fontWeight: 700 }}>
+                            🚨 Sospecha fiscal: +{Math.round(bid.corruptionRisk * 100)}%
+                          </span>
+                        ) : (
+                          <span style={{ color: '#86efac' }}>✓ 0% sospecha fiscal</span>
                         )}
                       </div>
                     </div>

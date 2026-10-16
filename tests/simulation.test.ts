@@ -233,6 +233,30 @@ describe('Game Lifecycle & Project Flow', () => {
     expect(approval.state.finance.personalBalance).toBe(initialPersonal + 50_000);
     expect(approval.state.politics.corruption).toBe(initialCorruption + 0.25);
     expect(approval.state.projects[0].contractor?.name).toBe('OdeVial S.A.');
+
+    // Clean contractor keeps corruption at 0%
+    const cleanApproval = approveProject(game, ctx, {
+      typeId: 'bikeLane',
+      indices: [0],
+      contractorBid: {
+        id: 'clean-1',
+        name: 'Clean Builders',
+        country: 'Public',
+        reputation: 'excellent',
+        headline: 'Clean',
+        pros: [],
+        cons: [],
+        costMultiplier: 1,
+        durationMultiplier: 1,
+        delayRisk: 0,
+        bribeOffer: 0,
+        corruptionRisk: 0,
+      },
+    });
+    expect(cleanApproval.ok).toBe(true);
+    if (cleanApproval.ok) {
+      expect(cleanApproval.state.politics.corruption).toBe(0);
+    }
   });
 
   it('triggers general elections after 5 years (1826 days), rejecting ministers who allow congestion to grow', () => {

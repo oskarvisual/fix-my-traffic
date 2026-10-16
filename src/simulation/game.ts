@@ -536,13 +536,17 @@ export function approveProject(
 
   let corruption = state.politics.corruption;
   const bid = draft.contractorBid;
-  if (bid && bid.bribeOffer > 0) {
-    finance = {
-      ...finance,
-      personalBalance: finance.personalBalance + bid.bribeOffer,
-      totalBribesReceived: finance.totalBribesReceived + bid.bribeOffer,
-    };
-    corruption = Math.min(1.0, corruption + bid.corruptionRisk);
+  if (bid) {
+    if (bid.bribeOffer > 0) {
+      finance = {
+        ...finance,
+        personalBalance: finance.personalBalance + bid.bribeOffer,
+        totalBribesReceived: finance.totalBribesReceived + bid.bribeOffer,
+      };
+    }
+    if (bid.corruptionRisk > 0) {
+      corruption = Math.min(1.0, corruption + bid.corruptionRisk);
+    }
   }
 
   const newsItems: Omit<NewsItem, 'id'>[] = [
@@ -555,7 +559,7 @@ export function approveProject(
     },
   ];
 
-  if (bid && bid.bribeOffer > 0) {
+  if (bid && (bid.bribeOffer > 0 || bid.corruptionRisk >= 0.10)) {
     newsItems.push({
       day: state.clock.day,
       severity: 'warning',
