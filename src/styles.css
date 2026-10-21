@@ -119,4 +119,37 @@
   }
 }
 
+/* GitHub repository map badge - positioned directly above MapLibre attribution */
+.github-map-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 24px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: #0f1712f5;
+  border: 1.5px solid #fae392;
+  border-radius: 2px;
+  color: #fae392;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+}
+
+.github-map-badge:hover {
+  background: #18261e;
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(250, 227, 146, 0.4);
+}
+
 
