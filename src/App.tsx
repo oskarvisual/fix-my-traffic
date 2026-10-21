@@ -24,9 +24,7 @@ import { t } from './i18n';
 import type { NewsItem } from './simulation/state';
 import { getAllCities, findCity, type CityCatalogEntry } from './data/cityCatalog';
 import { searchOsmCities, importCity, type OsmCitySearchResult } from './data/cityImporter';
-
-
-
+import { TutorialModal } from './components/TutorialModal';
 
 export default function App() {
   const [screen, setScreen] = useState<'title' | 'city' | 'loading' | 'game'>('title');
@@ -56,7 +54,7 @@ export default function App() {
 
   // Player Name & Cabinet Appointment State
   const [playerNameInput, setPlayerNameInput] = useState<string>(() => {
-    return (typeof window !== 'undefined' && localStorage.getItem('fmt_player_name')) || 'Ministro';
+    return (typeof window !== 'undefined' && localStorage.getItem('fmt_player_name')) || 'Minister';
   });
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [pendingCityId, setPendingCityId] = useState<string | null>(null);
@@ -68,6 +66,12 @@ export default function App() {
   const [activeBreakingNews, setActiveBreakingNews] = useState<NewsItem | null>(null);
   const [dismissedBreakingIds, setDismissedBreakingIds] = useState<Set<string>>(() => new Set());
 
+  // Full Press Archive Modal State
+  const [isNewsArchiveModalOpen, setIsNewsArchiveModalOpen] = useState(false);
+
+  // Interactive Tutorial Modal State
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [tutorialInitialStep, setTutorialInitialStep] = useState(0);
 
   // Custom City Importer State
   const [catalogCities, setCatalogCities] = useState<CityCatalogEntry[]>(() => getAllCities());
@@ -97,7 +101,7 @@ export default function App() {
         const results = await searchOsmCities(q);
         setSearchResults(results);
       } catch (err: unknown) {
-        setSearchError(err instanceof Error ? err.message : 'Error buscando ciudades');
+        setSearchError(err instanceof Error ? err.message : 'Error searching cities');
       } finally {
         setIsSearchingCities(false);
       }
@@ -108,7 +112,7 @@ export default function App() {
   const handleSelectAndImportCity = async (selected: OsmCitySearchResult) => {
     setIsImporting(true);
     setImportingCityName(selected.name);
-    setImportStatusMessage('Iniciando importación desde OpenStreetMap...');
+    setImportStatusMessage('Starting import from OpenStreetMap...');
     setImportProgressPercent(5);
     setSearchError(null);
     try {
@@ -123,7 +127,7 @@ export default function App() {
     } catch (err: unknown) {
       setIsImporting(false);
       setSearchError(
-        `Error importando ${selected.name}: ${err instanceof Error ? err.message : String(err)}. Intenta de nuevo o elige otra ciudad.`,
+        `Error importing ${selected.name}: ${err instanceof Error ? err.message : String(err)}. Please try again or choose another city.`,
       );
     }
   };
@@ -134,7 +138,7 @@ export default function App() {
   };
 
   const handleConfirmPlayerName = () => {
-    const name = playerNameInput.trim() || 'Ministro';
+    const name = playerNameInput.trim() || 'Minister';
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem('fmt_player_name', name);
     }
@@ -150,6 +154,17 @@ export default function App() {
       setActiveBreakingNews(null);
       sessionRef.current?.setSpeed(1); // Resume game at 1x
     }
+  };
+
+  const handleCloseTutorial = () => {
+    setIsTutorialOpen(false);
+    sessionRef.current?.setSpeed(1); // Resume simulation at 1x
+  };
+
+  const handleOpenTutorial = () => {
+    sessionRef.current?.setSpeed(0); // Pause simulation while reading tutorial
+    setTutorialInitialStep(0);
+    setIsTutorialOpen(true);
   };
 
   // Initialize storage repository and auto-resume
@@ -315,7 +330,7 @@ export default function App() {
       const city = await loadCity(cityId);
       setLoadedCity(city);
 
-      const finalPlayerName = customPlayerName || playerNameInput.trim() || 'Ministro';
+      const finalPlayerName = customPlayerName || playerNameInput.trim() || 'Minister';
       const newGameState = createNewGame(
         {
           cityId,
@@ -331,8 +346,11 @@ export default function App() {
       sessionRef.current = sess;
       setSession(sess);
       sess.start();
+      sess.setSpeed(0); // Pause simulation while reading appointment induction & tutorial
       void sess.save();
       setScreen('game');
+      setTutorialInitialStep(0);
+      setIsTutorialOpen(true);
     } catch (err) {
       console.error(err);
       alert('Failed to load city data: ' + err);
@@ -342,14 +360,18 @@ export default function App() {
 
   const handleSelectSegment = (index: number | null) => {
     if (isDraftingSubway) return;
+    if (index === null) {
+      setSelectedRoadIndices([]);
+      setDraftIndices([]);
+      return;
+    }
     if (isDrafting) {
-      if (index === null) return;
       setDraftIndices((prev) =>
         prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
       );
     } else {
-      setSelectedRoadIndices(index !== null ? [index] : []);
-      if (index !== null) setRightPanelTab('inspector');
+      setSelectedRoadIndices([index]);
+      setRightPanelTab('inspector');
     }
   };
 
@@ -387,11 +409,10 @@ export default function App() {
       return;
     }
     setIsDraftingSubway(false);
+    setSubwayDraftStations([]);
+    setMapLayerMode('surface'); // Auto-switch back to surface view for surface tools (bike lane, BRT, etc.)
     setSelectedProjectType(typeId);
     setIsDrafting(true);
-    setSelectedBidIndex(0);
-    // Pause simulation while drafting/planning
-    session?.setSpeed(0);
     if (selectedRoadIndices.length > 0 && draftIndices.length === 0) {
       setDraftIndices(selectedRoadIndices);
     }
@@ -410,8 +431,6 @@ export default function App() {
       const targetIndices = [...draftIndices];
       setDraftIndices([]);
       setSelectedRoadIndices(targetIndices); // Auto-select approved project route!
-      // Resume simulation at normal speed (1x)
-      session.setSpeed(1);
     } else {
       alert(`Cannot approve project: ${t(`draft.error.${res.reason}` as string)}`);
     }
@@ -420,15 +439,13 @@ export default function App() {
   const handleCancelDraft = () => {
     setIsDrafting(false);
     setDraftIndices([]);
-    // Resume simulation at normal speed
-    session?.setSpeed(1);
   };
 
   const handleAddSubwayStation = (lngLat: [number, number]) => {
     const num = subwayDraftStations.length + 1;
     setSubwayDraftStations((prev) => [
       ...prev,
-      { name: `Estación ${num}`, coordinates: lngLat },
+      { name: `Station ${num}`, coordinates: lngLat },
     ]);
   };
 
@@ -440,7 +457,6 @@ export default function App() {
     setSubwayDraftStations([]);
     setSelectedBidIndex(0);
     setMapLayerMode('subterranean'); // auto-switch to subterranean view!
-    session?.setSpeed(0); // pause simulation
   };
 
 
@@ -456,7 +472,7 @@ export default function App() {
       contractorBid: bid,
       subwayStations: subwayDraftStations,
       subwayAlignment: tunnelCoordinates,
-      customName: `Línea Subterránea (${subwayDraftStations.length} est. · ${subwayLengthKm} km)`,
+      customName: `Subway Line (${subwayDraftStations.length} stns · ${subwayLengthKm} km)`,
       customCost: subwayBaseCost,
       customStreetKm: subwayLengthKm,
     });
@@ -464,7 +480,7 @@ export default function App() {
     if (res.ok) {
       setIsDraftingSubway(false);
       setSubwayDraftStations([]);
-      session.setSpeed(1);
+      setMapLayerMode('surface');
     } else {
       alert(`Cannot approve subway: ${t(`draft.error.${res.reason}` as string)}`);
     }
@@ -473,7 +489,7 @@ export default function App() {
   const handleCancelSubwayDraft = () => {
     setIsDraftingSubway(false);
     setSubwayDraftStations([]);
-    session?.setSpeed(1);
+    setMapLayerMode('surface');
   };
 
   if (screen === 'title') {
@@ -500,10 +516,10 @@ export default function App() {
 
   if (screen === 'city') {
     const difficultyBadges: Record<string, { label: string; color: string; bg: string }> = {
-      easy: { label: 'Fácil', color: '#4ade80', bg: 'rgba(34, 197, 94, 0.15)' },
-      normal: { label: 'Medio', color: '#fde047', bg: 'rgba(234, 179, 8, 0.15)' },
-      hard: { label: 'Difícil', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.15)' },
-      extreme: { label: 'Muy Difícil', color: '#f87171', bg: 'rgba(239, 68, 68, 0.2)' },
+      easy: { label: 'Easy', color: '#4ade80', bg: 'rgba(34, 197, 94, 0.15)' },
+      normal: { label: 'Medium', color: '#fde047', bg: 'rgba(234, 179, 8, 0.15)' },
+      hard: { label: 'Hard', color: '#fb923c', bg: 'rgba(249, 115, 22, 0.15)' },
+      extreme: { label: 'Extreme', color: '#f87171', bg: 'rgba(239, 68, 68, 0.2)' },
     };
 
     const cityCoordinates: Record<string, string> = {
@@ -527,7 +543,7 @@ export default function App() {
             const transitSummary =
               city.transitSummaryKey.startsWith('city.') && t(city.transitSummaryKey) !== city.transitSummaryKey
                 ? t(city.transitSummaryKey)
-                : `Red vial real de ${city.name} con ${city.streetsCount.toLocaleString()} vías y cálculo de demanda generado.`;
+                : `Real road network of ${city.name} with ${city.streetsCount.toLocaleString()} corridors and simulated demand model.`;
 
             return (
               <section key={city.id} className="city-card" style={{ margin: 0, padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -569,11 +585,11 @@ export default function App() {
                   </div>
                   <div>
                     <dt>{t('city.roadNetwork')}</dt>
-                    <dd style={{ fontSize: '12px' }}>{city.streetsCount.toLocaleString()} Calles</dd>
+                    <dd style={{ fontSize: '12px' }}>{city.streetsCount.toLocaleString()} Streets</dd>
                   </div>
                   <div>
                     <dt>{t('city.population')}</dt>
-                    <dd style={{ fontSize: '12px' }}>{city.population?.value ? (city.population.value / 1e6).toFixed(1) + 'M hab.' : 'N/A'}</dd>
+                    <dd style={{ fontSize: '12px' }}>{city.population?.value ? (city.population.value / 1e6).toFixed(1) + 'M pop.' : 'N/A'}</dd>
                   </div>
                 </dl>
 
@@ -589,7 +605,7 @@ export default function App() {
             );
           })}
 
-          {/* Interactive Card: Esa no es mi ciudad */}
+          {/* Interactive Card: Not your city? */}
           <section
             className="city-card custom-city-card"
             style={{
@@ -616,10 +632,10 @@ export default function App() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '12px' }}>
               <div style={{ fontSize: '38px', lineHeight: 1 }}>🌍</div>
               <h2 style={{ fontSize: '20px', margin: 0, color: '#e8f4ec', fontWeight: 600 }}>
-                ¿Esa no es tu ciudad?
+                Not your city?
               </h2>
               <p style={{ fontSize: '13px', margin: 0, color: '#90a896', maxWidth: '280px', lineHeight: 1.45 }}>
-                Busca cualquier ciudad del mundo. Descargaremos su red vial real y podrás jugarla de inmediato.
+                Search any city worldwide. We will download its real street network so you can take office immediately.
               </p>
             </div>
 
@@ -643,12 +659,12 @@ export default function App() {
                 setSearchError(null);
               }}
             >
-              <span>🔍</span> Buscar e Importar Otra Ciudad
+              <span>🔍</span> Search & Import Another City
             </button>
           </section>
         </div>
 
-        {/* Modal: Buscar e Importar Ciudad */}
+        {/* Modal: Search & Import City */}
         {isImportModalOpen && (
           <div
             style={{
@@ -694,12 +710,12 @@ export default function App() {
               >
                 <div>
                   <h2 style={{ fontSize: '20px', margin: 0, color: '#f0fdf4', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>🌍</span> {isImporting ? `Importando ${importingCityName}` : 'Buscar e Importar Ciudad'}
+                    <span>🌍</span> {isImporting ? `Importing ${importingCityName}` : 'Search & Import City'}
                   </h2>
                   <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#88a090' }}>
                     {isImporting
-                      ? 'Obteniendo geometría de OpenStreetMap y balanceando la red...'
-                      : 'Elige cualquier ciudad o metrópoli para convertirte en su ministro de transporte.'}
+                      ? 'Retrieving OpenStreetMap geometry and balancing the network...'
+                      : 'Choose any city or metropolis worldwide to become its Minister of Transportation.'}
                   </p>
                 </div>
                 {!isImporting && (
@@ -755,7 +771,7 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ backgroundColor: '#14241a', padding: '12px 16px', borderRadius: '8px', border: '1px solid #1e3325', fontSize: '12px', color: '#90a896', lineHeight: 1.5, textAlign: 'center' }}>
-                      💡 La red vial real, líneas de transporte y avenidas principales se procesan en tu navegador y se respaldan en Supabase.
+                      💡 Real street geometry, transit routes, and primary avenues are processed in your browser and synced to Supabase.
                     </div>
                   </div>
                 ) : (
@@ -766,7 +782,7 @@ export default function App() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Ej: Montevideo, Bogotá, Madrid, Medellín, Córdoba..."
+                        placeholder="e.g. Montevideo, Bogotá, Madrid, London, Tokyo, Chicago..."
                         autoFocus
                         style={{
                           width: '100%',
@@ -806,7 +822,7 @@ export default function App() {
                     {/* Status/Error */}
                     {isSearchingCities && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#86efac', fontSize: '13px', padding: '4px 0' }}>
-                        <span>⏳</span> Buscando ciudades en OpenStreetMap Nominatim...
+                        <span>⏳</span> Searching cities on OpenStreetMap Nominatim...
                       </div>
                     )}
 
@@ -874,20 +890,20 @@ export default function App() {
                             }}
                             onClick={() => handleSelectAndImportCity(item)}
                           >
-                            Importar y Jugar →
+                            Import & Play →
                           </button>
                         </div>
                       ))}
 
                       {searchResults.length === 0 && searchQuery.trim().length >= 2 && !isSearchingCities && !searchError && (
                         <div style={{ textAlign: 'center', padding: '30px 10px', color: '#88a090', fontSize: '13px' }}>
-                          No se encontraron ciudades con ese nombre. Intenta escribir el nombre oficial o alternativo.
+                          No cities found matching that name. Try searching the official or alternate name.
                         </div>
                       )}
 
                       {searchQuery.trim().length < 2 && (
                         <div style={{ textAlign: 'center', padding: '24px 10px', color: '#688272', fontSize: '13px' }}>
-                          Escribe al menos 2 letras para buscar ciudades de cualquier país.
+                          Type at least 2 letters to search cities in any country.
                         </div>
                       )}
                     </div>
@@ -899,7 +915,7 @@ export default function App() {
         )}
 
 
-        {/* Modal: Asunción del Mando Ministerial (Preguntar Nombre) */}
+        {/* Modal: Cabinet Swearing-In & Ministerial Appointment */}
         {isNameModalOpen && (
           <div
             style={{
@@ -931,23 +947,23 @@ export default function App() {
               <div>
                 <div style={{ fontSize: '38px', marginBottom: '8px' }}>🏛️</div>
                 <h2 style={{ fontSize: '22px', margin: '0 0 6px', color: '#f0fdf4' }}>
-                  Despacho Ministerial de Transporte
+                  Ministry of Transportation
                 </h2>
                 <p style={{ margin: 0, fontSize: '13px', color: '#88a090', lineHeight: 1.45 }}>
-                  Asumirás el control de la red vial de <b>{findCity(pendingCityId || '')?.name || 'la ciudad'}</b>.
-                  Ingresa tu nombre para los decretos oficiales, boletines del gabinete y portadas de los diarios.
+                  You will assume command of the road network in <b>{findCity(pendingCityId || '')?.name || 'the city'}</b>.
+                  Enter your official name for executive decrees, cabinet press releases, and newspaper headlines.
                 </p>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '11px', color: '#86efac', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px', fontWeight: 700 }}>
-                  Nombre y Apellido del Ministro/a
+                  Minister's Full Name
                 </label>
                 <input
                   type="text"
                   value={playerNameInput}
                   onChange={(e) => setPlayerNameInput(e.target.value)}
-                  placeholder="Ej: Ing. Carlos Mendoza"
+                  placeholder="e.g. Carlos Mendoza, Elena Rostova..."
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleConfirmPlayerName();
@@ -972,14 +988,14 @@ export default function App() {
                   style={{ flex: 1, padding: '12px' }}
                   onClick={() => setIsNameModalOpen(false)}
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   className="primary"
                   style={{ flex: 2, padding: '12px', justifyContent: 'center', fontSize: '14px' }}
                   onClick={handleConfirmPlayerName}
                 >
-                  Asumir Despacho ⚖️
+                  Take Office & Swear In ⚖️
                 </button>
               </div>
             </div>
@@ -1055,12 +1071,12 @@ export default function App() {
 
         <div
           className="metric"
-          title={`Sospecha de Corrupción (Fiscalía / Contraloría): ${formatPercent(state.politics.corruption)}.\n${
+          title={`Corruption Suspicion (Prosecutor / Audit Office): ${formatPercent(state.politics.corruption)}.\n${
             state.politics.corruption === 0
-              ? 'Gestión 100% limpia sin denuncias ni coimas. Aumenta si aceptas sobornos de contratistas o adjudicas a constructoras cuestionadas.'
+              ? '100% clean administration with no audit complaints or bribes. Increases if you accept contractor kickbacks or award tenders to controversial bidders.'
               : state.politics.corruption >= 0.35
-              ? '¡PELIGRO! La Fiscalía ha abierto diligencias penales contra tu despacho.'
-              : 'Atención: Existen sospechas y denuncias en medios de prensa por tus contratos adjudicados.'
+              ? 'DANGER! The Anti-Corruption Prosecutor has opened formal criminal inquiries against your office.'
+              : 'Warning: Investigative reporters and auditors are scrutinizing your public procurement awards.'
           }`}
           style={{ cursor: 'help' }}
         >
@@ -1077,22 +1093,64 @@ export default function App() {
 
         {/* Speed Controls: 60 real seconds = 1 game day at 1x */}
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          {[0, 1, 5, 15, 30].map((s) => (
-            <button
-              key={s}
-              className="advance"
-              style={{
-                background: speed === s ? '#b8e86c' : 'transparent',
-                color: speed === s ? '#101713' : '#dff7a8',
-                fontWeight: speed === s ? 'bold' : 'normal',
-                padding: '6px 8px',
-              }}
-              title={s === 0 ? 'Pause' : `${s}× Speed`}
-              onClick={() => session?.setSpeed(s)}
-            >
-              {s === 0 ? '⏸' : `${s}×`}
-            </button>
-          ))}
+          {[0, 1, 5, 15, 30].map((s) => {
+            const isPaused = speed === 0;
+            const isPauseButton = s === 0;
+            const isSelected = speed === s;
+
+            let background = 'transparent';
+            let color = '#dff7a8';
+            let border = '1px solid #233728';
+            let boxShadow = 'none';
+
+            if (isPauseButton) {
+              if (isPaused) {
+                background = '#ef4444';
+                color = '#ffffff';
+                border = '1px solid #dc2626';
+                boxShadow = '0 0 14px rgba(239, 68, 68, 0.8)';
+              } else {
+                background = 'rgba(239, 68, 68, 0.08)';
+                color = '#fca5a5';
+                border = '1px solid rgba(239, 68, 68, 0.3)';
+              }
+            } else if (isSelected) {
+              background = '#b8e86c';
+              color = '#101713';
+              border = '1px solid #b8e86c';
+              boxShadow = '0 0 8px rgba(184, 232, 108, 0.35)';
+            }
+
+            return (
+              <button
+                key={s}
+                className="advance"
+                style={{
+                  background,
+                  color,
+                  border,
+                  boxShadow,
+                  fontWeight: isSelected ? 800 : isPauseButton ? 700 : 500,
+                  padding: isPauseButton && isPaused ? '6px 10px' : '6px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                title={
+                  isPauseButton
+                    ? isPaused
+                      ? 'Simulation is PAUSED — Click 1× to resume'
+                      : 'Pause simulation'
+                    : `${s}× Speed`
+                }
+                onClick={() => session?.setSpeed(s)}
+              >
+                {isPauseButton ? (isPaused ? '⏸ PAUSED' : '⏸') : `${s}×`}
+              </button>
+            );
+          })}
           <button
             className="advance"
             style={{ padding: '6px 8px' }}
@@ -1100,6 +1158,23 @@ export default function App() {
             onClick={() => session?.advanceDays(30)}
           >
             +30d
+          </button>
+          <button
+            className="advance"
+            style={{
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              backgroundColor: 'rgba(184, 232, 108, 0.08)',
+              borderColor: 'rgba(184, 232, 108, 0.35)',
+              color: '#dff7a8',
+            }}
+            title="Open Mayor's Induction Guide & Tutorial"
+            onClick={handleOpenTutorial}
+          >
+            <span style={{ fontSize: '13px' }}>❓</span>
+            <span>Tutorial</span>
           </button>
         </div>
       </header>
@@ -1110,13 +1185,13 @@ export default function App() {
           className={mapLayerMode === 'surface' ? 'active' : ''}
           onClick={() => setMapLayerMode('surface')}
         >
-          ☀️ Superficie
+          ☀️ Surface
         </button>
         <button
           className={`subterranean ${mapLayerMode === 'subterranean' ? 'active' : ''}`}
           onClick={() => setMapLayerMode('subterranean')}
         >
-          🚇 Subterráneo
+          🚇 Underground
         </button>
       </div>
 
@@ -1142,6 +1217,67 @@ export default function App() {
       <aside className="left-panel">
         <p className="eyebrow">{t('tools.title')}</p>
         <h2>{t('tools.title')}</h2>
+
+        {/* Active Selection / Corridor Indicator with Deselect button */}
+        {(selectedRoadIndices.length > 0 || draftIndices.length > 0) && (
+          <div
+            style={{
+              backgroundColor: 'rgba(0, 240, 255, 0.08)',
+              border: '1px solid rgba(0, 240, 255, 0.3)',
+              borderRadius: '6px',
+              padding: '8px 10px',
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '8px',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '11px',
+                color: '#00f0ff',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+              title={
+                selectedRoadIndices.length > 1
+                  ? `${selectedRoadIndices.length} segments selected`
+                  : loadedCity.ctx.network.segments[selectedRoadIndices[0] ?? draftIndices[0]]?.name || '1 segment selected'
+              }
+            >
+              <span>🛣️ </span>
+              <strong>
+                {selectedRoadIndices.length > 1
+                  ? `${selectedRoadIndices.length} segments`
+                  : loadedCity.ctx.network.segments[selectedRoadIndices[0] ?? draftIndices[0]]?.name || 'Selected road'}
+              </strong>
+            </div>
+            <button
+              className="advance"
+              style={{
+                fontSize: '10px',
+                padding: '3px 8px',
+                borderColor: 'rgba(239, 68, 68, 0.5)',
+                color: '#f87171',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                fontWeight: 700,
+              }}
+              title="Deselect all selected roads"
+              onClick={() => {
+                setSelectedRoadIndices([]);
+                setDraftIndices([]);
+                setIsDrafting(false);
+              }}
+            >
+              ✕ Deselect
+            </button>
+          </div>
+        )}
 
         {/* Bike Lane */}
         <button
@@ -1187,7 +1323,7 @@ export default function App() {
           <span>{PROJECT_CONFIG.subway.icon}</span>
           <span>
             {t('tools.subway')}
-            <small>Modo Libre · Tuneladora TBM</small>
+            <small>Freeform Alignment · TBM</small>
           </span>
         </button>
 
@@ -1216,7 +1352,7 @@ export default function App() {
           {loadedCity.bundle.transit.routes.length > 0 && (
             <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #28372b' }}>
               <p className="eyebrow" style={{ fontSize: '9px', marginBottom: '8px', color: '#94a99b' }}>
-                Red de Transporte ({loadedCity.bundle.roads.city.name})
+                Transit Network ({loadedCity.bundle.roads.city.name})
               </p>
               <div className="transit-legend-list">
                 {loadedCity.bundle.transit.routes.map((r) => (
@@ -1268,7 +1404,7 @@ export default function App() {
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
-                  title="Haz clic para inspeccionar esta obra en el mapa"
+                  title="Click to inspect this work site on the map"
                   onClick={() => {
                     if (projectSegmentIndices.length > 0) {
                       setSelectedRoadIndices(projectSegmentIndices);
@@ -1287,7 +1423,7 @@ export default function App() {
                     </span>
                   </div>
                   <div style={{ fontSize: '11px', color: '#88a090', marginBottom: '8px' }}>
-                    Contratista: <span style={{ color: '#d1ded4' }}>{p.contractor?.name ?? 'Ministerio'}</span>
+                    Contractor: <span style={{ color: '#d1ded4' }}>{p.contractor?.name ?? 'Ministry'}</span>
                   </div>
                   <button
                     className="advance"
@@ -1301,12 +1437,12 @@ export default function App() {
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm(`¿Deseas rescindir el contrato de "${p.name}"? Se recuperará parte del presupuesto y se liberarán los carriles cerrados.`)) {
+                      if (confirm(`Terminate contract for "${p.name}"? Part of the budget will be recovered and closed lanes will reopen.`)) {
                         session?.cancel(p.id);
                       }
                     }}
                   >
-                    ✕ Cancelar / Rescindir Contrato
+                    ✕ Terminate Contract
                   </button>
                 </div>
               );
@@ -1317,7 +1453,7 @@ export default function App() {
 
       {/* Right Sidebar: Contextual Info & Inspector / Draft Proposal */}
       <aside className="right-panel">
-        {/* Tab switcher: Noticias & Opinión vs Inspector Vial */}
+        {/* Tab switcher: News & Opinion vs Road Inspector */}
         <div
           style={{
             display: 'flex',
@@ -1348,7 +1484,7 @@ export default function App() {
             }}
             onClick={() => setRightPanelTab('news')}
           >
-            <span>📰</span> Noticias y Opinión
+            <span>📰</span> News & Opinion
             {state.news.some((n) => n.isBreaking) && (
               <span
                 style={{
@@ -1381,7 +1517,7 @@ export default function App() {
             }}
             onClick={() => setRightPanelTab('inspector')}
           >
-            <span>🛣️</span> Inspector {primarySelectedRoadIndex !== null || isDrafting ? '●' : ''}
+            <span>🛣️</span> Road Inspector {primarySelectedRoadIndex !== null || isDrafting ? '●' : ''}
           </button>
         </div>
 
@@ -1400,7 +1536,7 @@ export default function App() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="eyebrow" style={{ margin: 0, color: '#86efac' }}>
-                  📊 Barómetro de Opinión Pública
+                  📊 Public Opinion Barometer
                 </span>
                 <small style={{ color: '#688272', fontSize: '10px' }}>Datum / Ipsos</small>
               </div>
@@ -1421,7 +1557,7 @@ export default function App() {
                   {formatPercent(state.politics.approval)}
                 </span>
                 <span style={{ fontSize: '12px', color: '#c4cec5', lineHeight: 1.3 }}>
-                  Aprobación a la gestión del Ministro <b>{state.playerName}</b>
+                  Approval rating for Minister <b>{state.playerName}</b>
                 </span>
               </div>
               <div
@@ -1433,21 +1569,22 @@ export default function App() {
                 }}
               >
                 {state.politics.approval >= 0.5
-                  ? '🌟 La ciudadanía percibe mejoras palpables en el tránsito y respalda el plan de obras.'
+                  ? '🌟 Citizens perceive tangible traffic improvements and strongly back your infrastructure plans.'
                   : state.politics.approval >= 0.25
-                  ? '⚠️ Clima de impaciencia. Vecinos exigen acelerar obras y descongestionar avenidas.'
-                  : '🚨 ¡ALERTA ROJA! Descontento masivo en las calles y amenaza de censura parlamentaria.'}
+                  ? '⚠️ Growing impatience. Commuters demand faster works and decongested arterials.'
+                  : '🚨 RED ALERT! Massive street protests and imminent congressional censure threat.'}
               </div>
             </div>
 
             {/* News List */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <p className="eyebrow" style={{ margin: 0 }}>Despachos de Prensa · En Vivo</p>
-              <small style={{ color: '#688272', fontSize: '10px' }}>{state.news.length} publicaciones</small>
+              <p className="eyebrow" style={{ margin: 0 }}>Live Press Dispatches</p>
+              <small style={{ color: '#688272', fontSize: '10px' }}>{state.news.length} dispatches</small>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: 'calc(100vh - 350px)', overflowY: 'auto' }}>
-              {state.news.map((item) => {
+            {/* Display only the latest 3 dispatches */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {state.news.slice(0, 3).map((item) => {
                 const isCrit = item.isBreaking || item.severity === 'danger';
                 return (
                   <div
@@ -1469,10 +1606,10 @@ export default function App() {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <span style={{ fontSize: '11px', color: '#86efac', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>{item.outletIcon || '📰'}</span> {item.outlet || 'Boletín Ministerial'}
+                        <span>{item.outletIcon || '📰'}</span> {item.outlet || 'Official Ministerial Bulletin'}
                       </span>
                       <small style={{ color: '#688272', fontSize: '10px', fontFamily: 'DM Mono, monospace' }}>
-                        Día {item.day}
+                        Day {item.day}
                       </small>
                     </div>
 
@@ -1509,61 +1646,86 @@ export default function App() {
                           borderRadius: '4px',
                         }}
                       >
-                        <span>🔴</span> Transmisión en TV · Ver Alerta →
+                        <span>🔴</span> Live TV Broadcast · View Alert →
                       </div>
                     )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Button to open full press archive modal */}
+            <button
+              className="advance"
+              style={{
+                marginTop: '12px',
+                width: '100%',
+                padding: '10px 14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                backgroundColor: '#122218',
+                borderColor: '#2d4c38',
+                color: '#86efac',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                transition: 'all 0.15s ease',
+              }}
+              onClick={() => setIsNewsArchiveModalOpen(true)}
+            >
+              <span>📜</span> View Full Press Archive ({state.news.length} Articles) →
+            </button>
           </div>
         ) : isDraftingSubway ? (
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <p className="eyebrow" style={{ color: '#c084fc', margin: 0 }}>Subsuelo · Modo Libre</p>
+              <p className="eyebrow" style={{ color: '#c084fc', margin: 0 }}>Subterranean · Freeform Mode</p>
               <button
                 className="advance"
                 style={{ fontSize: '11px', padding: '3px 8px' }}
                 onClick={handleCancelSubwayDraft}
               >
-                Cerrar ✕
+                Close ✕
               </button>
             </div>
-            <h2>🚇 Metro Subterráneo (TBM)</h2>
+            <h2>🚇 Underground Subway (TBM)</h2>
             <p className="muted" style={{ fontSize: '12px' }}>
-              Haz clic en cualquier punto del mapa para colocar estaciones subterráneas. El túnel perforará el subsuelo entre cada estación libremente.
+              Click anywhere on the map to place underground stations. The tunnel boring machine (TBM) will excavate between stations freely.
             </p>
 
             <div className="proposal">
               <span>
-                Estaciones colocadas: <b>{subwayDraftStations.length}</b>
+                Stations placed: <b>{subwayDraftStations.length}</b>
               </span>
               <span>
-                Longitud de túnel: <b>{formatKm(subwayLengthKm)}</b>
+                Tunnel alignment: <b>{formatKm(subwayLengthKm)}</b>
               </span>
               <span>
-                Costo estimado:{' '}
+                Estimated cost:{' '}
                 <b>{formatCurrency(Math.round(subwayBaseCost * (selectedSubwayBid?.costMultiplier ?? 1)))}</b>
               </span>
               <span>
-                Disrupción superficial: <b style={{ color: '#86efac' }}>Mínima (solo pozos de acceso)</b>
+                Surface disruption: <b style={{ color: '#86efac' }}>Minimal (access shafts only)</b>
               </span>
               <span>
-                Alivio proyectado: <b className="positive">-40% tráfico en el área</b>
+                Projected relief: <b className="positive">-40% area traffic relief</b>
               </span>
             </div>
 
             {subwayDraftStations.length > 0 && (
               <div style={{ margin: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <p className="eyebrow" style={{ margin: 0 }}>Trazado de Estaciones</p>
+                  <p className="eyebrow" style={{ margin: 0 }}>Station Alignment</p>
                   <button
                     className="advance"
                     style={{ fontSize: '10px', padding: '2px 6px' }}
                     onClick={() => setSubwayDraftStations((prev) => prev.slice(0, -1))}
                   >
-                    ↩ Deshacer última
+                    ↩ Undo last
                   </button>
                 </div>
                 <div className="subway-stations-list">
@@ -1582,7 +1744,7 @@ export default function App() {
             {/* Bidding proposals for subway */}
             {subwayContractorBids.length > 0 && (
               <>
-                <p className="eyebrow" style={{ margin: '8px 0 4px' }}>Licitación de Obra Subterránea</p>
+                <p className="eyebrow" style={{ margin: '8px 0 4px' }}>Subway Construction Procurement</p>
                 <div className="bidding-list">
                   {subwayContractorBids.map((bid, idx) => (
                     <div
@@ -1593,11 +1755,11 @@ export default function App() {
                       <div className="contractor-name">
                         <span>{bid.name}</span>
                         {bid.bribeOffer > 0 ? (
-                          <span className="bribe-badge">💰 Soborno: +{formatCurrency(bid.bribeOffer)}</span>
+                          <span className="bribe-badge">💰 Kickback: +{formatCurrency(bid.bribeOffer)}</span>
                         ) : bid.reputation === 'excellent' ? (
-                          <span className="tech-badge">🛡️ Auditoría Limpia</span>
+                          <span className="tech-badge">🛡️ Clean Audit Record</span>
                         ) : (
-                          <span className="risk-badge">⚠️ Riesgo Auditoría</span>
+                          <span className="risk-badge">⚠️ Audit Scrutiny Risk</span>
                         )}
                       </div>
                       <p style={{ margin: '4px 0', fontSize: '11px', color: '#c4cec5' }}>
@@ -1614,18 +1776,36 @@ export default function App() {
                         ))}
                       </ul>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '10px', color: '#889988' }}>
-                        <span>Costo: {Math.round(bid.costMultiplier * 100)}%</span>
+                        <span>Cost: {Math.round(bid.costMultiplier * 100)}%</span>
                         {bid.corruptionRisk > 0 ? (
                           <span style={{ color: '#ef4444', fontWeight: 700 }}>
-                            🚨 Sospecha fiscal: +{Math.round(bid.corruptionRisk * 100)}%
+                            🚨 Fiscal scrutiny: +{Math.round(bid.corruptionRisk * 100)}%
                           </span>
                         ) : (
-                          <span style={{ color: '#86efac' }}>✓ 0% sospecha fiscal</span>
+                          <span style={{ color: '#86efac' }}>✓ 0% fiscal suspicion</span>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {selectedSubwayBid && selectedSubwayBid.corruptionRisk > 0 && (
+                  <div
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      border: '1px solid #ef4444',
+                      borderRadius: '4px',
+                      padding: '8px 10px',
+                      margin: '10px 0 8px',
+                      fontSize: '11px',
+                      color: '#fca5a5',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    🚨 <b>Awarding tender to {selectedSubwayBid.name}:</b> Adds <b>+{Math.round(selectedSubwayBid.corruptionRisk * 100)}%</b> to Corruption Suspicion
+                    {selectedSubwayBid.bribeOffer > 0 ? ` and transfers +${formatCurrency(selectedSubwayBid.bribeOffer)} kickback to your personal account.` : '.'}
+                  </div>
+                )}
 
                 <button
                   className="primary full"
@@ -1634,10 +1814,26 @@ export default function App() {
                     state.finance.publicBudget < subwayBaseCost * (selectedSubwayBid?.costMultiplier ?? 1)
                   }
                   onClick={handleApproveSubwayDraft}
+                  style={{
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '2px',
+                    padding: '10px 14px',
+                  }}
                 >
-                  {subwayDraftStations.length < 2
-                    ? 'Coloca al menos 2 estaciones en el mapa'
-                    : 'Aprobar Contrato & Iniciar Tuneladora'}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                    <span>
+                      {subwayDraftStations.length < 2
+                        ? 'Place at least 2 stations on the map'
+                        : 'Award Contract & Launch Tunnel Boring'}
+                    </span>
+                    <span>→</span>
+                  </div>
+                  {subwayDraftStations.length >= 2 && (
+                    <span style={{ fontSize: '10px', fontWeight: 500, opacity: 0.85 }}>
+                      Contractor: {selectedSubwayBid?.name}
+                    </span>
+                  )}
                 </button>
               </>
             )}
@@ -1647,7 +1843,7 @@ export default function App() {
               style={{ marginTop: '8px', width: '100%' }}
               onClick={handleCancelSubwayDraft}
             >
-              Cancelar Trazado Subterráneo
+              Cancel Subway Tunneling
             </button>
           </div>
         ) : isDrafting ? (
@@ -1723,7 +1919,7 @@ export default function App() {
 
                 <hr style={{ borderColor: '#2d3c30', margin: '12px 0 8px' }} />
 
-                {/* 3 Contractor Proposals (Licitación) */}
+                {/* 3 Contractor Proposals (Procurement) */}
                 <p className="eyebrow" style={{ margin: '4px 0' }}>{t('bidding.sectionTitle')}</p>
                 <div className="bidding-list">
                   {contractorBids.map((bid, idx) => (
@@ -1735,11 +1931,11 @@ export default function App() {
                       <div className="contractor-name">
                         <span>{bid.name}</span>
                         {bid.bribeOffer > 0 ? (
-                          <span className="bribe-badge">💰 Soborno: +{formatCurrency(bid.bribeOffer)}</span>
+                          <span className="bribe-badge">💰 Kickback: +{formatCurrency(bid.bribeOffer)}</span>
                         ) : bid.reputation === 'excellent' ? (
-                          <span className="tech-badge">🛡️ Auditoría Limpia</span>
+                          <span className="tech-badge">🛡️ Clean Audit Record</span>
                         ) : (
-                          <span className="risk-badge">⚠️ Riesgo Auditoría</span>
+                          <span className="risk-badge">⚠️ Audit Scrutiny Risk</span>
                         )}
                       </div>
                       <p style={{ margin: '4px 0', fontSize: '11px', color: '#c4cec5' }}>
@@ -1756,13 +1952,13 @@ export default function App() {
                         ))}
                       </ul>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '10px', color: '#889988' }}>
-                        <span>Costo: {Math.round(bid.costMultiplier * 100)}%</span>
+                        <span>Cost: {Math.round(bid.costMultiplier * 100)}%</span>
                         {bid.corruptionRisk > 0 ? (
                           <span style={{ color: '#ef4444', fontWeight: 700 }}>
-                            🚨 Sospecha fiscal: +{Math.round(bid.corruptionRisk * 100)}%
+                            🚨 Fiscal scrutiny: +{Math.round(bid.corruptionRisk * 100)}%
                           </span>
                         ) : (
-                          <span style={{ color: '#86efac' }}>✓ 0% sospecha fiscal</span>
+                          <span style={{ color: '#86efac' }}>✓ 0% fiscal suspicion</span>
                         )}
                       </div>
                     </div>
@@ -1771,12 +1967,42 @@ export default function App() {
 
                 <hr style={{ borderColor: '#2d3c30', margin: '8px 0' }} />
 
+                {selectedBid && selectedBid.corruptionRisk > 0 && (
+                  <div
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      border: '1px solid #ef4444',
+                      borderRadius: '4px',
+                      padding: '8px 10px',
+                      marginBottom: '8px',
+                      fontSize: '11px',
+                      color: '#fca5a5',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    🚨 <b>Awarding tender to {selectedBid.name}:</b> Adds <b>+{Math.round(selectedBid.corruptionRisk * 100)}%</b> to Corruption Suspicion
+                    {selectedBid.bribeOffer > 0 ? ` and transfers +${formatCurrency(selectedBid.bribeOffer)} kickback to your personal account.` : '.'}
+                  </div>
+                )}
+
                 <button
                   className="primary full"
                   disabled={projectEstimate.error !== null}
                   onClick={handleApproveDraft}
+                  style={{
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '2px',
+                    padding: '10px 14px',
+                  }}
                 >
-                  {t('draft.approve')}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                    <span>{t('draft.approve')}</span>
+                    <span>→</span>
+                  </div>
+                  <span style={{ fontSize: '10px', fontWeight: 500, opacity: 0.85 }}>
+                    Contractor: {selectedBid?.name ?? 'Standard Consortium'}
+                  </span>
                 </button>
                 {projectEstimate.error && (
                   <p style={{ color: '#ef4444', fontSize: '11px', margin: '4px 0 0' }}>
@@ -1800,14 +2026,30 @@ export default function App() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p className="eyebrow" style={{ margin: 0 }}>
-                {isFullAvenueSelected ? 'Avenida Completa' : t('road.inspect')}
+                {isFullAvenueSelected ? 'Full Corridor' : t('road.inspect')}
               </p>
               <button
                 className="advance"
-                style={{ fontSize: '11px', padding: '3px 8px' }}
-                onClick={() => setSelectedRoadIndices([])}
+                style={{
+                  fontSize: '11px',
+                  padding: '4px 10px',
+                  borderColor: 'rgba(239, 68, 68, 0.5)',
+                  color: '#f87171',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+                title="Deselect this road"
+                onClick={() => {
+                  setSelectedRoadIndices([]);
+                  setDraftIndices([]);
+                  setIsDrafting(false);
+                }}
               >
-                Deseleccionar ✕
+                ✕ Deselect
               </button>
             </div>
             <h2>{selectedRoad.name || t('road.unnamed')}</h2>
@@ -1817,25 +2059,31 @@ export default function App() {
               <div style={{ margin: '6px 0 12px' }}>
                 {!isFullAvenueSelected ? (
                   <button
-                    className="advance"
+                    type="button"
                     style={{
                       width: '100%',
-                      background: '#13211a',
-                      borderColor: '#00f0ff',
+                      background: 'rgba(0, 240, 255, 0.08)',
+                      border: '1px solid #00f0ff',
+                      borderRadius: '4px',
                       color: '#00f0ff',
-                      padding: '8px',
+                      padding: '8px 12px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '2px',
+                      gap: '3px',
+                      cursor: 'pointer',
+                      textAlign: 'center',
                     }}
-                    title="Doble clic en el mapa también selecciona toda la vía"
+                    title="Double-click on map also selects the entire corridor"
                     onClick={() => setSelectedRoadIndices(allAvenueIndices)}
                   >
-                    <span>🛣️ <b>Seleccionar toda la vía</b> ({allAvenueIndices.length} tramos)</span>
-                    <small style={{ color: '#889988', fontSize: '10px' }}>
-                      (O haz doble clic sobre el tramo en el mapa)
-                    </small>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#e0f7fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🛣️</span>
+                      <span>Select entire corridor ({allAvenueIndices.length} segments)</span>
+                    </div>
+                    <span style={{ color: '#7dd3fc', fontSize: '10px', opacity: 0.85, lineHeight: 1.2 }}>
+                      Double-click any segment on map to select all
+                    </span>
                   </button>
                 ) : (
                   <div
@@ -1843,21 +2091,31 @@ export default function App() {
                       background: '#0e1c18',
                       border: '1px solid #00f0ff',
                       borderRadius: '4px',
-                      padding: '8px',
+                      padding: '8px 10px',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
+                      gap: '8px',
                     }}
                   >
-                    <span style={{ fontSize: '11px', color: '#00f0ff' }}>
-                      ✓ Toda la vía ({selectedRoadIndices.length} tramos · {formatKm(selectedTotalKm)})
+                    <span style={{ fontSize: '11px', color: '#00f0ff', lineHeight: 1.3 }}>
+                      ✓ Full corridor ({selectedRoadIndices.length} segments · {formatKm(selectedTotalKm)})
                     </span>
                     <button
-                      className="advance"
-                      style={{ fontSize: '10px', padding: '2px 8px' }}
+                      type="button"
+                      style={{
+                        fontSize: '10px',
+                        padding: '4px 8px',
+                        background: 'transparent',
+                        border: '1px solid #00f0ff',
+                        color: '#00f0ff',
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
                       onClick={() => setSelectedRoadIndices([primarySelectedRoadIndex!])}
                     >
-                      Solo 1 tramo
+                      Single segment only
                     </button>
                   </div>
                 )}
@@ -1865,12 +2123,11 @@ export default function App() {
             )}
 
             {/* Active Project Banner on this Road if present */}
-            {/* Active Project Banner on this Road if present */}
             {activeProjectOnSegment && (
               <div style={{ background: '#19221a', border: '1px solid #ef4444', borderRadius: '4px', padding: '10px', margin: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="eyebrow" style={{ color: '#ef4444', margin: 0 }}>
-                    {activeProjectOnSegment.phase === 'construction' ? '🚧 Obras en Ejecución' : 'Proyecto Aprobado'}
+                    {activeProjectOnSegment.phase === 'construction' ? '🚧 Works in Progress' : 'Approved Project'}
                   </span>
                   <span style={{ fontSize: '11px', color: '#b8e86c' }}>{formatPercent(activeProjectOnSegment.progress)}</span>
                 </div>
@@ -1880,22 +2137,22 @@ export default function App() {
                 {activeProjectOnSegment.phase === 'construction' && (
                   <div style={{ background: 'rgba(249, 115, 22, 0.15)', border: '1px solid #f97316', borderRadius: '4px', padding: '6px 8px', margin: '6px 0', fontSize: '11px', color: '#fed7aa', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>🚧</span>
-                    <span><b>Calle cerrada al tránsito:</b> Tráfico vehicular desviado hacia vías paralelas cercanas.</span>
+                    <span><b>Street closed to traffic:</b> Vehicular traffic diverted to nearby parallel corridors.</span>
                   </div>
                 )}
                 <p style={{ fontSize: '11px', color: '#a0b0a3', margin: '2px 0 8px' }}>
-                  Contratista: <b>{activeProjectOnSegment.contractor?.name ?? 'Estándar'}</b> · Fase: {t(`project.phase.${activeProjectOnSegment.phase}` as string)}
+                  Contractor: <b>{activeProjectOnSegment.contractor?.name ?? 'Standard'}</b> · Phase: {t(`project.phase.${activeProjectOnSegment.phase}` as string)}
                 </p>
                 <button
                   className="advance"
                   style={{ width: '100%', borderColor: '#ef4444', color: '#fca5a5', padding: '6px' }}
                   onClick={() => {
-                    if (confirm(`¿Deseas rescindir el contrato de "${activeProjectOnSegment.name}"? Se recuperará el 70% del presupuesto asignado y se liberarán los carriles cerrados.`)) {
+                    if (confirm(`Do you want to terminate the contract for "${activeProjectOnSegment.name}"? 70% of the allocated budget will be recovered and closed lanes will reopen.`)) {
                       session?.cancel(activeProjectOnSegment.id);
                     }
                   }}
                 >
-                  ✕ Rescindir contrato (+70% reembolso)
+                  ✕ Terminate contract (+70% refund)
                 </button>
               </div>
             )}
@@ -1912,43 +2169,95 @@ export default function App() {
               <div>
                 <strong>
                   {activeProjectOnSegment?.phase === 'construction'
-                    ? '🚧 Cerrada por Obras'
+                    ? '🚧 Closed for Construction'
                     : t(`congestion.${congestionLevel(avgCongestion)}` as string)}
                 </strong>
                 <small>
                   {activeProjectOnSegment?.phase === 'construction'
-                    ? 'Vía vacía · 96% del flujo desviado a calles alternas'
+                    ? 'Corridor closed · 96% of traffic diverted to detour streets'
                     : t('road.score', { value: avgCongestion.toFixed(2) })}
                 </small>
               </div>
             </div>
 
-            <dl>
-              <div>
-                <dt>{t('road.length')}</dt>
-                <dd>{formatKm(selectedTotalKm)} ({selectedRoadIndices.length} {selectedRoadIndices.length === 1 ? 'tramo' : 'tramos'})</dd>
+            {/* Road Key Metrics - 2x2 Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '8px',
+                margin: '12px 0',
+              }}
+            >
+              <div style={{ background: '#0e1711', border: '1px solid #253328', borderRadius: '4px', padding: '8px 10px' }}>
+                <span style={{ font: "500 10px 'DM Mono'", color: '#829386', textTransform: 'uppercase', display: 'block' }}>
+                  {t('road.length')}
+                </span>
+                <strong style={{ fontSize: '13px', color: '#eef2eb', display: 'block', marginTop: '2px' }}>
+                  {formatKm(selectedTotalKm)}
+                </strong>
+                <small style={{ font: "9px 'DM Mono'", color: '#829386' }}>
+                  {selectedRoadIndices.length} {selectedRoadIndices.length === 1 ? 'segment' : 'segments'}
+                </small>
               </div>
-              <div>
-                <dt>{t('road.demand')}</dt>
-                <dd>
-                  {activeProjectOnSegment?.phase === 'construction'
-                    ? `${Math.round(traffic.currentDemand[selectedRoad.index])} veh/h (Vía vacía · Desvío activo ↪️)`
-                    : `${Math.round(traffic.currentDemand[selectedRoad.index])} veh/h`}
-                </dd>
+
+              <div style={{ background: '#0e1711', border: '1px solid #253328', borderRadius: '4px', padding: '8px 10px' }}>
+                <span style={{ font: "500 10px 'DM Mono'", color: '#829386', textTransform: 'uppercase', display: 'block' }}>
+                  {t('road.lanes')}
+                </span>
+                <strong style={{ fontSize: '13px', color: '#eef2eb', display: 'block', marginTop: '2px' }}>
+                  {selectedRoad.lanes} {selectedRoad.lanes === 1 ? 'lane' : 'lanes'}
+                </strong>
+                <small style={{ font: "9px 'DM Mono'", color: '#829386' }}>
+                  {selectedRoad.oneway ? 'One-way' : 'Two-way'}
+                </small>
               </div>
-              <div>
-                <dt>{t('road.capacity')}</dt>
-                <dd>
+
+              <div style={{ background: '#0e1711', border: '1px solid #253328', borderRadius: '4px', padding: '8px 10px' }}>
+                <span style={{ font: "500 10px 'DM Mono'", color: '#829386', textTransform: 'uppercase', display: 'block' }}>
+                  {t('road.demand')}
+                </span>
+                <strong style={{ fontSize: '13px', color: '#eef2eb', display: 'block', marginTop: '2px' }}>
+                  {Math.round(traffic.currentDemand[selectedRoad.index])} veh/h
+                </strong>
+                {activeProjectOnSegment?.phase === 'construction' ? (
+                  <span style={{ font: "9px 'DM Mono'", color: '#f97316', display: 'block', marginTop: '2px' }}>
+                    ↪️ Detour active
+                  </span>
+                ) : (
+                  <small style={{ font: "9px 'DM Mono'", color: '#829386' }}>
+                    Peak flow
+                  </small>
+                )}
+              </div>
+
+              <div style={{ background: '#0e1711', border: '1px solid #253328', borderRadius: '4px', padding: '8px 10px' }}>
+                <span style={{ font: "500 10px 'DM Mono'", color: '#829386', textTransform: 'uppercase', display: 'block' }}>
+                  {t('road.capacity')}
+                </span>
+                <strong
+                  style={{
+                    fontSize: '13px',
+                    color: activeProjectOnSegment?.phase === 'construction' ? '#ef4444' : '#eef2eb',
+                    display: 'block',
+                    marginTop: '2px',
+                  }}
+                >
                   {activeProjectOnSegment?.phase === 'construction'
-                    ? '0 veh/h (Cerrada al tránsito)'
+                    ? '0 veh/h'
                     : `${Math.round(traffic.capacity[selectedRoad.index])} veh/h`}
-                </dd>
+                </strong>
+                {activeProjectOnSegment?.phase === 'construction' ? (
+                  <span style={{ font: "9px 'DM Mono'", color: '#ef4444', display: 'block', marginTop: '2px' }}>
+                    ⛔ Closed for works
+                  </span>
+                ) : (
+                  <small style={{ font: "9px 'DM Mono'", color: '#829386' }}>
+                    Nominal max
+                  </small>
+                )}
               </div>
-              <div>
-                <dt>{t('road.lanes')}</dt>
-                <dd>{selectedRoad.lanes} {selectedRoad.oneway ? '(sentido único)' : '(doble sentido)'}</dd>
-              </div>
-            </dl>
+            </div>
 
             <button
               className="primary full"
@@ -1963,12 +2272,12 @@ export default function App() {
         ) : (
           <div>
             <p className="eyebrow">{t('road.inspect')}</p>
-            <h2>Explorar red vial</h2>
+            <h2>Explore Road Network</h2>
             <p className="muted">
-              Haz clic en cualquier calle o avenida del mapa para inspeccionar su demanda, saturación de carriles y proponer obras de transporte.
+              Click any street or avenue on the map to inspect vehicle throughput, lane saturation, and propose infrastructure works.
             </p>
             <p className="muted" style={{ fontSize: '11px', marginTop: '12px' }}>
-              Tip: También puedes hacer clic en un área vacía del mapa para deseleccionar.
+              Tip: You can also click empty map space to deselect.
             </p>
           </div>
         )}
@@ -2037,14 +2346,14 @@ export default function App() {
                       backgroundColor: '#ffffff',
                     }}
                   />
-                  EN VIVO
+                  LIVE
                 </span>
                 <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700, letterSpacing: '0.05em' }}>
-                  TRANSMISIÓN DE EMERGENCIA · NOTICIA DE IMPACTO
+                  EMERGENCY BROADCAST · BREAKING NEWS
                 </span>
               </div>
               <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontFamily: 'DM Mono, monospace' }}>
-                CANAL 24H
+                24H NEWS NETWORK
               </div>
             </div>
 
@@ -2052,7 +2361,7 @@ export default function App() {
             <div style={{ position: 'relative', width: '100%', height: '320px', backgroundColor: '#000', overflow: 'hidden' }}>
               <img
                 src="/assets/congressman.png"
-                alt="Transmisión en vivo"
+                alt="Live broadcast"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -2101,7 +2410,7 @@ export default function App() {
                     boxShadow: '0 -2px 8px rgba(0,0,0,0.4)',
                   }}
                 >
-                  {activeBreakingNews.breakingData?.speaker || 'CONG. VÍCTOR BUSTAMANTE · COMISIÓN DE TRANSPORTES'}
+                  {activeBreakingNews.breakingData?.speaker || 'SEN. VICTOR BUSTAMANTE · TRANSPORTATION COMMITTEE'}
                 </div>
 
                 {/* Main Headline Franja */}
@@ -2133,10 +2442,10 @@ export default function App() {
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: '#88a090', fontSize: '12px' }}>
-                  🗞️ {activeBreakingNews.outlet || 'Boletín de Prensa Nacional'} · Día {activeBreakingNews.day}
+                  🗞️ {activeBreakingNews.outlet || 'National Press Dispatch'} · Day {activeBreakingNews.day}
                 </span>
                 <span style={{ color: '#ef4444', fontSize: '12px', fontWeight: 600 }}>
-                  Situación Crítica en {loadedCity.bundle.roads.city.name}
+                  Critical Situation in {loadedCity.bundle.roads.city.name}
                 </span>
               </div>
 
@@ -2155,9 +2464,9 @@ export default function App() {
                   lineHeight: 1.45,
                 }}
               >
-                ⚠️ <b>Aviso al Despacho Ministerial:</b>{' '}
+                ⚠️ <b>Notice to the Minister's Office:</b>{' '}
                 {activeBreakingNews.breakingData?.urgentActionPrompt ||
-                  'Toma decisiones urgentes de infraestructura y presupuesto para evitar la moción de censura en el Congreso.'}
+                  'Take urgent infrastructure and budget decisions to avert a congressional censure vote.'}
               </div>
 
               <button
@@ -2177,19 +2486,214 @@ export default function App() {
                 }}
                 onClick={handleDismissBreakingNews}
               >
-                <span>🏛️</span> Atender la Emergencia y Retomar Mando
+                <span>🏛️</span> Address Emergency & Resume Office
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Full Press Archive Modal */}
+      {isNewsArchiveModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(3, 8, 5, 0.88)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9998,
+            padding: '20px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsNewsArchiveModalOpen(false);
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0d1811',
+              border: '1px solid #284432',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(74, 222, 128, 0.15)',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid #1e3325',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: '#112217',
+              }}
+            >
+              <div>
+                <h2 style={{ fontSize: '18px', margin: 0, color: '#f0fdf4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>📜</span> Historical Press & Intelligence Archive
+                </h2>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#88a090' }}>
+                  Chronological timeline of all ministerial dispatches, investigative reports, and opinion polls ({state.news.length} total)
+                </p>
+              </div>
+              <button
+                onClick={() => setIsNewsArchiveModalOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#88a090',
+                  fontSize: '20px',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body: Scrollable list of all news items */}
+            <div
+              style={{
+                padding: '20px 24px',
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              {state.news.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#88a090' }}>
+                  No press dispatches published yet.
+                </div>
+              ) : (
+                state.news.map((item) => {
+                  const isCrit = item.isBreaking || item.severity === 'danger';
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        backgroundColor: isCrit ? 'rgba(239, 68, 68, 0.08)' : '#122016',
+                        border: isCrit ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid #233728',
+                        borderRadius: '10px',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '13px' }}>{item.outletIcon || '📰'}</span>
+                          <span style={{ fontSize: '12px', color: '#86efac', fontWeight: 600 }}>
+                            {item.outlet || 'Official Ministerial Bulletin'}
+                          </span>
+                          {item.category && (
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                textTransform: 'uppercase',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                backgroundColor: '#1a3322',
+                                color: '#a7f3d0',
+                                letterSpacing: '0.04em',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {item.category}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ color: '#688272', fontSize: '11px', fontFamily: 'DM Mono, monospace' }}>
+                          Day {item.day}
+                        </span>
+                      </div>
+
+                      <h4
+                        style={{
+                          margin: '2px 0 0',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          color: isCrit ? '#fca5a5' : '#f0fdf4',
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {item.headline || t(item.key as string, item.params)}
+                      </h4>
+
+                      {item.snippet && (
+                        <p style={{ margin: 0, fontSize: '12px', color: '#9cb3a2', lineHeight: 1.5 }}>
+                          {item.snippet}
+                        </p>
+                      )}
+
+                      {(item.isBreaking || item.breakingData) && (
+                        <div style={{ marginTop: '4px' }}>
+                          <button
+                            className="advance"
+                            style={{
+                              fontSize: '11px',
+                              padding: '4px 10px',
+                              color: '#f87171',
+                              borderColor: '#ef4444',
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                            }}
+                            onClick={() => {
+                              setIsNewsArchiveModalOpen(false);
+                              setActiveBreakingNews(item);
+                              sessionRef.current?.setSpeed(0);
+                            }}
+                          >
+                            <span>🔴</span> Open TV Broadcast Alert →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: '12px 24px',
+                borderTop: '1px solid #1e3325',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                backgroundColor: '#112217',
+              }}
+            >
+              <button
+                className="advance"
+                style={{ padding: '8px 18px', fontSize: '12px' }}
+                onClick={() => setIsNewsArchiveModalOpen(false)}
+              >
+                Close Archive
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Briefing / News Feed (Ministry Intelligence) */}
       <section className="event-feed">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <p className="eyebrow" style={{ margin: 0 }}>Despacho Ministerial · Boletín de Inteligencia</p>
-          <small style={{ color: '#6ee7b7', fontSize: '10px' }}>En vivo</small>
+          <p className="eyebrow" style={{ margin: 0 }}>Ministerial Desk · Intelligence Feed</p>
+          <small style={{ color: '#6ee7b7', fontSize: '10px' }}>Live</small>
         </div>
         {state.news.slice(0, 3).map((item) => (
           <p className={`event ${item.severity}`} key={item.id}>
@@ -2198,6 +2702,15 @@ export default function App() {
           </p>
         ))}
       </section>
+
+      {/* Interactive Mayor Induction & Game Tutorial Modal */}
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={handleCloseTutorial}
+        playerName={state.playerName || playerNameInput || 'Mayor'}
+        cityName={loadedCity.bundle.roads.city.name}
+        initialStep={tutorialInitialStep}
+      />
 
       {/* Game Over Modal */}
       {state.status === 'gameOver' && (

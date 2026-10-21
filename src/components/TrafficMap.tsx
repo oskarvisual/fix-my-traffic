@@ -153,6 +153,40 @@ export const TrafficMap = ({
         promoteId: 'index',
       });
 
+      // Layer 0: Hover Halo Glow (cyan aura when hovering over any road)
+      map.addLayer({
+        id: 'roads-hover-halo',
+        type: 'line',
+        source: 'roads',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#00f0ff',
+          'line-blur': 3,
+          'line-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'selected'], false],
+            0.0,
+            ['boolean', ['feature-state', 'hover'], false],
+            0.8,
+            0.0,
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11,
+            8,
+            14,
+            13,
+            17,
+            20,
+          ],
+        },
+      });
+
       // Layer 1: Road Casing (subtle dark border)
       map.addLayer({
         id: 'roads-casing',
@@ -170,11 +204,11 @@ export const TrafficMap = ({
             ['linear'],
             ['zoom'],
             11,
-            ['match', ['get', 'roadType'], 'motorway', 3.5, 'trunk', 3, 'primary', 2.5, 1.8],
+            ['match', ['get', 'roadType'], 'motorway', 4.5, 'trunk', 4, 'primary', 3.5, 2.5],
             14,
-            ['match', ['get', 'roadType'], 'motorway', 6.5, 'trunk', 5.5, 'primary', 4.5, 'secondary', 3.5, 2.5],
+            ['match', ['get', 'roadType'], 'motorway', 8, 'trunk', 7, 'primary', 5.5, 'secondary', 4.5, 3.5],
             17,
-            ['match', ['get', 'roadType'], 'motorway', 12, 'trunk', 10, 'primary', 8, 'secondary', 6, 4],
+            ['match', ['get', 'roadType'], 'motorway', 14, 'trunk', 12, 'primary', 10, 'secondary', 8, 6],
           ],
         },
       });
@@ -226,8 +260,8 @@ export const TrafficMap = ({
                 ['boolean', ['feature-state', 'inDraft'], false],
                 ['boolean', ['feature-state', 'underConstruction'], false],
               ],
-              4,
-              ['match', ['get', 'roadType'], 'motorway', 2.2, 'trunk', 1.8, 'primary', 1.5, 1.0],
+              5,
+              ['match', ['get', 'roadType'], 'motorway', 3.0, 'trunk', 2.5, 'primary', 2.0, 1.4],
             ],
             14,
             [
@@ -238,8 +272,8 @@ export const TrafficMap = ({
                 ['boolean', ['feature-state', 'inDraft'], false],
                 ['boolean', ['feature-state', 'underConstruction'], false],
               ],
-              7,
-              ['match', ['get', 'roadType'], 'motorway', 4.8, 'trunk', 3.8, 'primary', 3.0, 'secondary', 2.2, 1.5],
+              8,
+              ['match', ['get', 'roadType'], 'motorway', 5.8, 'trunk', 4.8, 'primary', 3.8, 'secondary', 2.8, 2.0],
             ],
             17,
             [
@@ -250,8 +284,8 @@ export const TrafficMap = ({
                 ['boolean', ['feature-state', 'inDraft'], false],
                 ['boolean', ['feature-state', 'underConstruction'], false],
               ],
-              12,
-              ['match', ['get', 'roadType'], 'motorway', 9, 'trunk', 7.5, 'primary', 6, 'secondary', 4.5, 3],
+              14,
+              ['match', ['get', 'roadType'], 'motorway', 10.5, 'trunk', 9, 'primary', 7.5, 'secondary', 6, 4],
             ],
           ],
         },
@@ -280,11 +314,37 @@ export const TrafficMap = ({
             ['linear'],
             ['zoom'],
             11,
-            2.5,
+            3,
             14,
-            5.5,
+            6,
             17,
-            10,
+            11,
+          ],
+        },
+      });
+
+      // Layer 2C: Generous Invisible Hit Target for Road Hover & Selection
+      map.addLayer({
+        id: 'roads-hit-target',
+        type: 'line',
+        source: 'roads',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#000000',
+          'line-opacity': 0.001,
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11,
+            16,
+            14,
+            24,
+            17,
+            36,
           ],
         },
       });
@@ -302,6 +362,7 @@ export const TrafficMap = ({
                 mode: r.mode,
                 ref: r.ref,
                 color: r.colour || '#00e676',
+                subterranean: !!r.subterranean,
               },
               geometry: {
                 type: 'LineString',
@@ -386,7 +447,7 @@ export const TrafficMap = ({
         source: 'jurisdiction-mask',
         paint: {
           'fill-color': '#030705',
-          'fill-opacity': 0.82,
+          'fill-opacity': 0.45,
         },
       });
 
@@ -418,6 +479,50 @@ export const TrafficMap = ({
           'line-opacity': 0.85,
         },
       });
+
+      // Existing Subterranean Transit Lines (Pre-existing real-world Subways/Metros)
+      // Rendered above the subterranean wash so they glow when toggled to Underground mode!
+      if (transit && transit.routes.length > 0) {
+        map.addLayer({
+          id: 'transit-subterranean-casing',
+          type: 'line',
+          source: 'transit-source',
+          filter: ['==', ['get', 'subterranean'], true],
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': '#020617',
+            'line-width': ['interpolate', ['linear'], ['zoom'], 11, 6, 15, 10],
+            'line-opacity': mapLayerMode === 'subterranean' ? 0.95 : 0.0,
+          },
+        });
+
+        map.addLayer({
+          id: 'transit-subterranean-glow',
+          type: 'line',
+          source: 'transit-source',
+          filter: ['==', ['get', 'subterranean'], true],
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 11, 8, 15, 14],
+            'line-blur': 3,
+            'line-opacity': mapLayerMode === 'subterranean' ? 0.65 : 0.0,
+          },
+        });
+
+        map.addLayer({
+          id: 'transit-subterranean-lines',
+          type: 'line',
+          source: 'transit-source',
+          filter: ['==', ['get', 'subterranean'], true],
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': ['interpolate', ['linear'], ['zoom'], 11, 3.5, 15, 6],
+            'line-opacity': mapLayerMode === 'subterranean' ? 1.0 : 0.0,
+          },
+        });
+      }
 
       // Player-built subway lines and stations
       map.addSource('player-subways-source', {
@@ -512,6 +617,42 @@ export const TrafficMap = ({
       // Disable doubleClickZoom so double-clicking road selects the whole avenue instead of zooming
       map.doubleClickZoom.disable();
 
+      let hoveredIndex: number | null = null;
+
+      const setHoveredSegment = (index: number | null) => {
+        if (hoveredIndex === index) return;
+        if (hoveredIndex !== null) {
+          map.setFeatureState({ source: 'roads', id: hoveredIndex }, { hover: false });
+        }
+        hoveredIndex = index;
+        if (index !== null) {
+          map.setFeatureState({ source: 'roads', id: index }, { hover: true });
+          if (!isDraftingSubwayRef.current) {
+            map.getCanvas().style.cursor = 'pointer';
+          }
+        } else {
+          if (!isDraftingSubwayRef.current) {
+            map.getCanvas().style.cursor = '';
+          }
+        }
+      };
+
+      // Hover detection on wide hit-target layer
+      map.on('mousemove', 'roads-hit-target', (e: maplibregl.MapLayerMouseEvent) => {
+        if (isDraftingSubwayRef.current) return;
+        if (e.features && e.features.length > 0 && e.features[0].id !== undefined) {
+          setHoveredSegment(Number(e.features[0].id));
+        }
+      });
+
+      map.on('mouseleave', 'roads-hit-target', () => {
+        setHoveredSegment(null);
+      });
+
+      map.on('mouseout', () => {
+        setHoveredSegment(null);
+      });
+
       let lastClickTime = 0;
       let lastClickedIndex: number | null = null;
 
@@ -523,7 +664,11 @@ export const TrafficMap = ({
           return;
         }
 
-        const features = map.queryRenderedFeatures(e.point, { layers: ['roads-traffic'] });
+        // Query click on hit target (roads-hit-target already provides generous 16-36px line width)
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: ['roads-hit-target', 'roads-traffic'],
+        });
+
         if (features && features.length > 0 && features[0].id !== undefined) {
           const index = Number(features[0].id);
           const now = Date.now();
@@ -546,23 +691,11 @@ export const TrafficMap = ({
       });
 
       // Native MapLibre dblclick event on roads
-      map.on('dblclick', 'roads-traffic', (e: maplibregl.MapLayerMouseEvent) => {
+      map.on('dblclick', 'roads-hit-target', (e: maplibregl.MapLayerMouseEvent) => {
         if (isDraftingSubwayRef.current) return;
         if (e.features && e.features.length > 0 && e.features[0].id !== undefined) {
           const index = Number(e.features[0].id);
           onDoubleClickSegmentRef.current?.(index);
-        }
-      });
-
-      map.on('mouseenter', 'roads-traffic', () => {
-        if (!isDraftingSubwayRef.current) {
-          map.getCanvas().style.cursor = 'pointer';
-        }
-      });
-
-      map.on('mouseleave', 'roads-traffic', () => {
-        if (!isDraftingSubwayRef.current) {
-          map.getCanvas().style.cursor = '';
         }
       });
 
@@ -657,6 +790,9 @@ export const TrafficMap = ({
       if (map.getLayer('roads-casing')) map.setPaintProperty('roads-casing', 'line-opacity', 0.12);
       if (map.getLayer('roads-construction-hazard')) map.setPaintProperty('roads-construction-hazard', 'line-opacity', 0.0);
       if (map.getLayer('subterranean-wash')) map.setPaintProperty('subterranean-wash', 'fill-opacity', 0.65);
+      if (map.getLayer('transit-subterranean-casing')) map.setPaintProperty('transit-subterranean-casing', 'line-opacity', 0.95);
+      if (map.getLayer('transit-subterranean-glow')) map.setPaintProperty('transit-subterranean-glow', 'line-opacity', 0.65);
+      if (map.getLayer('transit-subterranean-lines')) map.setPaintProperty('transit-subterranean-lines', 'line-opacity', 1.0);
     } else {
       if (map.getLayer('roads-traffic')) map.setPaintProperty('roads-traffic', 'line-opacity', 1.0);
       if (map.getLayer('roads-casing')) map.setPaintProperty('roads-casing', 'line-opacity', 0.85);
@@ -669,6 +805,9 @@ export const TrafficMap = ({
         ]);
       }
       if (map.getLayer('subterranean-wash')) map.setPaintProperty('subterranean-wash', 'fill-opacity', 0.0);
+      if (map.getLayer('transit-subterranean-casing')) map.setPaintProperty('transit-subterranean-casing', 'line-opacity', 0.0);
+      if (map.getLayer('transit-subterranean-glow')) map.setPaintProperty('transit-subterranean-glow', 'line-opacity', 0.0);
+      if (map.getLayer('transit-subterranean-lines')) map.setPaintProperty('transit-subterranean-lines', 'line-opacity', 0.0);
     }
   }, [mapLayerMode]);
 
@@ -695,14 +834,14 @@ export const TrafficMap = ({
 
       if (segs.length === 0) continue;
 
-      // 1. Entry / Start of corridor: 🚧 CALLE CERRADA
+      // 1. Entry / Start of corridor: 🚧 ROAD CLOSED
       const firstSeg = segs[0];
       const startCoord = firstSeg.coordinates[0];
       if (startCoord) {
         const el = document.createElement('div');
         el.className = 'fmt-construction-badge';
-        el.innerHTML = `<span class="fmt-badge-emoji">🚧</span><span class="fmt-badge-text">CALLE CERRADA</span>`;
-        el.title = `🚧 Vía cerrada por obras de "${project.name}". Tráfico vehicular desviado a calles alternas.`;
+        el.innerHTML = `<span class="fmt-badge-emoji">🚧</span><span class="fmt-badge-text">ROAD CLOSED</span>`;
+        el.title = `🚧 Road closed for construction of "${project.name}". Vehicular traffic diverted to detour routes.`;
         el.onclick = (e) => {
           e.stopPropagation();
           onSelectSegmentRef.current(firstSeg.index);
@@ -713,7 +852,7 @@ export const TrafficMap = ({
         constructionMarkersRef.current.push(marker);
       }
 
-      // 2. Intermediate points: alternating 🦺 EN OBRAS and ⚠️ MAQUINARIA / DESVÍO
+      // 2. Intermediate points: alternating 🦺 ROADWORK and ⚠️ MACHINERY / DETOUR
       const step = Math.max(1, Math.floor(segs.length / 3));
       for (let i = step; i < segs.length; i += step) {
         const seg = segs[i];
@@ -726,14 +865,14 @@ export const TrafficMap = ({
 
         if (isLast) {
           el.className = 'fmt-detour-badge';
-          el.innerHTML = `<span class="fmt-badge-emoji">↪️</span><span class="fmt-badge-text">DESVÍO VIAL</span>`;
-          el.title = `↪️ Desvío vehicular por construcción de "${project.name}".`;
+          el.innerHTML = `<span class="fmt-badge-emoji">↪️</span><span class="fmt-badge-text">ROAD DETOUR</span>`;
+          el.title = `↪️ Active traffic detour due to construction of "${project.name}".`;
         } else {
           const emoji = i % 2 === 0 ? '🦺' : '⚠️';
-          const label = i % 2 === 0 ? 'EN OBRAS' : 'MAQUINARIA';
+          const label = i % 2 === 0 ? 'ROADWORK' : 'MACHINERY';
           el.className = 'fmt-construction-badge';
           el.innerHTML = `<span class="fmt-badge-emoji">${emoji}</span><span class="fmt-badge-text">${label}</span>`;
-          el.title = `⚠️ Obra en ejecución: "${project.name}" (${Math.round(project.progress * 100)}%).`;
+          el.title = `⚠️ Active construction: "${project.name}" (${Math.round(project.progress * 100)}%).`;
         }
 
         el.onclick = (e) => {

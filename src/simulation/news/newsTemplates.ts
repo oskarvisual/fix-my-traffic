@@ -15,15 +15,15 @@ export interface NewsTemplateContext {
 }
 
 const OUTLETS_BY_CITY: Record<string, string[]> = {
-  lima: ['Diario El Comercio', 'RPP Noticias', 'Diario Gestión', 'La República', 'Canal N', 'Exitosa Noticias'],
-  buenos_aires: ['Diario Clarín', 'La Nación', 'Infobae', 'TN Noticias', 'Ámbito Financiero', 'Radio Mitre'],
-  santiago: ['El Mercurio', 'La Tercera', 'Radio Bío-Bío', 'Emol', 'DF Financiero', 'Canal 13 Central'],
-  cdmx: ['El Universal', 'Reforma', 'Milenio Diario', 'El Financiero', 'W Radio', 'Noticieros Televisa'],
+  lima: ['The Lima Times', 'Andean Financial Review', 'Capital Post', 'Metropolitan Daily', 'CityLab Peru', 'National Broadcast Network'],
+  buenos_aires: ['Buenos Aires Herald', 'The Daily Clarín', 'La Nación World', 'Infobae English', 'Metropolitan Express', 'Financial Gazette'],
+  santiago: ['The Santiago Chronicle', 'El Mercurio Post', 'Andes Transit Review', 'Capital City News', 'Chilean Tribune'],
+  cdmx: ['The Mexico City Post', 'Reforma Daily', 'Universal Financial', 'Capital Wire News', 'Metropolitan Monitor'],
 };
 
-const DEFAULT_OUTLETS = ['El Diario Metropolitano', 'Cadena 24 Horas', 'Semanario Económico', 'Voz del Ciudadano'];
+const DEFAULT_OUTLETS = ['The Metropolitan Gazette', '24H City News', 'Urban Transit Weekly', 'Citizen Press Wire'];
 
-const POLLSTERS = ['Ipsos Opinión Pública', 'Datum Internacional', 'Instituto de Estudios Urbanos', 'GfK Sondeos', 'Encuestadora Pulso'];
+const POLLSTERS = ['Ipsos Public Affairs', 'Gallup Opinion Poll', 'Urban Studies Institute', 'Metropolitan Survey Group', 'National Pulse Index'];
 
 export function getRandomOutlet(cityId: string, seed: number): string {
   const list = OUTLETS_BY_CITY[cityId] || DEFAULT_OUTLETS;
@@ -44,8 +44,8 @@ export function buildRichNewsItem(
   cityId: string,
   severityOverride?: NewsSeverity,
 ): Omit<NewsItem, 'id'> {
-  const name = ctx.playerName || 'el Ministro';
-  const city = ctx.cityName || 'la ciudad';
+  const name = ctx.playerName || 'the Minister';
+  const city = ctx.cityName || 'the city';
   const seed = (ctx.day * 1337 + key.length * 31) | 0;
   const outlet = getRandomOutlet(cityId, seed);
   const pollster = getRandomPollster(seed);
@@ -57,11 +57,11 @@ export function buildRichNewsItem(
         severity: 'info',
         key,
         params: { name, city },
-        outlet: `${outlet} · Portada Principal`,
+        outlet: `${outlet} · Front Page`,
         outletIcon: '🏛️',
-        category: 'politica',
-        headline: `JURAMENTA ${name.toUpperCase()} COMO NUEVO MINISTRO DE TRANSPORTE`,
-        snippet: `En ceremonia oficial, ${name} asumió hoy el control de la red vial en ${city}. Enfrenta un déficit histórico de infraestructura y la promesa urgente de descongestionar las principales avenidas.`,
+        category: 'politics',
+        headline: `SWEARING-IN CEREMONY: ${name.toUpperCase()} ASSUMES OFFICE AS TRANSPORTATION MINISTER`,
+        snippet: `In an official ceremony, ${name} assumed command of the transit and road network in ${city} today. Faces historic infrastructure deficits and an urgent public mandate to relieve gridlock on major thoroughfares.`,
       };
     }
 
@@ -73,11 +73,11 @@ export function buildRichNewsItem(
         severity: 'success',
         key,
         params: { pct: app, name },
-        outlet: `📊 ${pollster} · Último Barómetro`,
+        outlet: `📊 ${pollster} · Latest Barometer`,
         outletIcon: '📈',
-        category: 'encuesta',
-        headline: `SUBE LA APROBACIÓN: ${app}% DE LA POBLACIÓN RESPALDA LA GESTIÓN DE ${name.toUpperCase()}`,
-        snippet: `El último estudio de opinión revela un repunte en la confianza ciudadana hacia ${name}. Usuarios destacan los nuevos corredores y la reducción gradual en las horas de atasco en ${city}.`,
+        category: 'poll',
+        headline: `PUBLIC APPROVAL RISES: ${app}% OF CITIZENS BACK MINISTER ${name.toUpperCase()}`,
+        snippet: `The latest public opinion study shows a surge in citizen confidence toward ${name}. Commuters cite new infrastructure corridors and measurable reductions in rush-hour bottlenecks across ${city}.`,
       };
     }
 
@@ -89,11 +89,11 @@ export function buildRichNewsItem(
         severity: 'warning',
         key,
         params: { pct: app, name },
-        outlet: `📊 ${pollster} · Sondeo Nacional`,
+        outlet: `📊 ${pollster} · National Survey`,
         outletIcon: '📉',
-        category: 'encuesta',
-        headline: `CAE EL RESPALDO: APROBACIÓN DE ${name.toUpperCase()} RETROCEDE A ${app}%`,
-        snippet: `Crece el escepticismo entre choferes y pasajeros. ${app}% de los encuestados reprueba la lentitud en habilitar rutas alternas y exige mano dura contra el desorden vehicular.`,
+        category: 'poll',
+        headline: `APPROVAL SLIPS: PUBLIC SUPPORT FOR ${name.toUpperCase()} FALLS TO ${app}%`,
+        snippet: `Frustration is mounting among motorists and transit riders. ${app}% of polled residents express impatience with detour delays and demand decisive action against street gridlock.`,
       };
     }
 
@@ -104,18 +104,18 @@ export function buildRichNewsItem(
         severity: 'danger',
         key,
         params: { approval: app, name },
-        outlet: `${outlet} · URGENTE`,
+        outlet: `${outlet} · BREAKING NEWS`,
         outletIcon: '🚨',
-        category: 'politica',
+        category: 'politics',
         isBreaking: true,
-        headline: `¡ULTIMÁTUM EN EL CONGRESO! PREPARAN MOCIÓN DE CENSURA CONTRA ${name.toUpperCase()}`,
-        snippet: `Con la aprobación en un crítico ${app}%, diversas bancadas parlamentarias firmaron una moción para interpelar a ${name}. "No permitiremos que la ciudad siga paralizada", advirtió la comisión fiscalizadora.`,
+        headline: `PARLIAMENTARY ULTIMATUM: CONGRESS PREPARES CENSURE MOTION AGAINST ${name.toUpperCase()}`,
+        snippet: `With approval dropping to a perilous ${app}%, opposition lawmakers have tabled a motion to impeach ${name}. "We will not allow our capital to remain paralyzed in gridlock," warned the oversight committee.`,
         breakingData: {
-          speaker: 'CONG. VÍCTOR BUSTAMANTE · COMISIÓN DE TRANSPORTES',
-          chyronHeadline: `EXIGIMOS LA RENUNCIA DE ${name.toUpperCase()}: LA CIUDAD HA COLAPSADO`,
+          speaker: 'CONG. VICTOR BUSTAMANTE · TRANSPORTATION COMMITTEE',
+          chyronHeadline: `WE DEMAND THE RESIGNATION OF ${name.toUpperCase()}: TRAFFIC GRIDLOCK HAS PARALYZED THE CITY`,
           chyronColor: 'red',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'Comparecer ante el Congreso y ejecutar medidas viales urgentes',
+          urgentActionPrompt: 'Approve urgent transit relief and infrastructure projects immediately to avert congressional censure.',
         },
       };
     }
@@ -126,51 +126,51 @@ export function buildRichNewsItem(
         severity: 'danger',
         key,
         params: { name },
-        outlet: `${outlet} · EDICIÓN EXTRAORDINARIA`,
+        outlet: `${outlet} · SPECIAL BULLETIN`,
         outletIcon: '⚡',
-        category: 'politica',
+        category: 'politics',
         isBreaking: true,
-        headline: `HISTÓRICO: CONGRESO APRUEBA LA CENSURA Y DESTITUYE A ${name.toUpperCase()}`,
-        snippet: `Con una votación abrumadora en el pleno, el parlamento revocó el mandato ministerial de ${name}. Se nombra una comisión de transición inmediata ante la indignación social.`,
+        headline: `PARLIAMENT VOTES CENSURE: MINISTER ${name.toUpperCase()} OFFICIALLY IMPEACHED`,
+        snippet: `In an overwhelming plenary vote, Congress revoked the ministerial mandate of ${name}. A transition commission has been appointed amidst widespread public protests.`,
         breakingData: {
-          speaker: 'PLENO DEL CONGRESO · MOCIÓN DE CENSURA APROBADA',
-          chyronHeadline: `DESTITUIDO: CONGRESO VOTA CENSURA CONTRA EL MINISTRO ${name.toUpperCase()}`,
+          speaker: 'CONGRESSIONAL PLENARY · CENSURE MOTION PASSED',
+          chyronHeadline: `IMPEACHED: PARLIAMENT REMOVES MINISTER ${name.toUpperCase()} FROM OFFICE`,
           chyronColor: 'red',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'El mandato ministerial ha concluido por destitución política.',
+          urgentActionPrompt: 'Ministerial mandate has terminated due to political destitution.',
         },
       };
     }
 
     case 'news.trafficIncreased': {
-      const road = ctx.roadName || 'Avenida Central';
+      const road = ctx.roadName || 'Central Avenue';
       const pct = ctx.pctDelta ?? 15;
       return {
         day: ctx.day,
         severity: 'warning',
         key,
         params: { road, pct },
-        outlet: `${outlet} · Tránsito en Vivo`,
+        outlet: `${outlet} · Live Traffic Desk`,
         outletIcon: '🚗',
-        category: 'trafico',
-        headline: `EMBOTELLAMIENTO CRÍTICO EN ${road.toUpperCase()}: RETRASOS AUMENTAN EN ${pct}%`,
-        snippet: `Conductores reportan colas kilométricas en ${road}. Choferes de buses expresan su frustración por la falta de fiscalización y desvíos mal señalizados.`,
+        category: 'traffic',
+        headline: `SEVERE CONGESTION ON ${road.toUpperCase()}: COMMUTE DELAYS SURGE BY ${pct}%`,
+        snippet: `Drivers report miles-long vehicle queues on ${road}. Bus operators voice frustration over bottlenecks and unmanaged construction spillover.`,
       };
     }
 
     case 'news.trafficDecreased': {
-      const road = ctx.roadName || 'Avenida Principal';
+      const road = ctx.roadName || 'Main Thoroughfare';
       const pct = ctx.pctDelta ?? 18;
       return {
         day: ctx.day,
         severity: 'success',
         key,
         params: { road, pct },
-        outlet: `${outlet} · Movilidad Urbana`,
+        outlet: `${outlet} · Urban Mobility`,
         outletIcon: '🛣️',
-        category: 'trafico',
-        headline: `ALIVIO EN ${road.toUpperCase()}: FLUIDEZ VEHICULAR MEJORA EN ${pct}%`,
-        snippet: `Las reformas implementadas por el despacho de ${name} comienzan a rendir frutos en ${road}. Los tiempos de traslado promedio cayeron notablemente durante la hora punta.`,
+        category: 'traffic',
+        headline: `TRAFFIC RELIEF ON ${road.toUpperCase()}: VEHICLE SPEEDS IMPROVE BY ${pct}%`,
+        snippet: `Transit reforms implemented by Minister ${name} are yielding tangible results on ${road}. Average corridor travel times decreased significantly during peak hours.`,
       };
     }
 
@@ -181,133 +181,133 @@ export function buildRichNewsItem(
         severity: 'danger',
         key,
         params: { congestion: cong, name },
-        outlet: `${outlet} · ÚLTIMA HORA`,
+        outlet: `${outlet} · LIVE EMERGENCY`,
         outletIcon: '🚨',
-        category: 'trafico',
+        category: 'traffic',
         isBreaking: true,
-        headline: `PARÁLISIS TOTAL: CONGESTIÓN SUPERA EL ${cong}% Y AMENAZAN CON PARO`,
-        snippet: `Los gremios de transporte público de ${city} exigen la salida de ${name} tras registrarse el peor colapso circulatorio del año. Intersecciones bloqueadas y ambulancias atrapadas en el tráfico.`,
+        headline: `CITYWIDE PARALYSIS: CONGESTION EXCEEDS ${cong}% ACROSS METROPOLITAN CORRIDORS`,
+        snippet: `Transit unions and commuters across ${city} demand decisive leadership from ${name} as traffic gridlock hits record highs. Major intersections are blocked and emergency vehicles struggle to pass.`,
         breakingData: {
-          speaker: 'CONG. VÍCTOR BUSTAMANTE · PRONUNCIAMIENTO DE URGENCIA',
-          chyronHeadline: `CAOS EN LA CIUDAD: CONGRESO EXIGE EXPLICACIONES A ${name.toUpperCase()}`,
+          speaker: 'CONG. VICTOR BUSTAMANTE · EMERGENCY STATEMENT',
+          chyronHeadline: `CITYWIDE CRISIS: CONGRESS SUMMONS ${name.toUpperCase()} OVER RECORD GRIDLOCK`,
           chyronColor: 'red',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'Aprobar proyectos de transporte masivo y despejar corredores',
+          urgentActionPrompt: 'Approve mass transit projects immediately and clear blocked thoroughfares.',
         },
       };
     }
 
     case 'news.projectApproved': {
-      const road = ctx.roadName || 'la arteria vial';
+      const road = ctx.roadName || 'Corridor';
       const cost = ctx.costFormatted || '$100M';
       return {
         day: ctx.day,
         severity: 'info',
         key,
         params: { name: road, cost },
-        outlet: `${outlet} · Obras Públicas`,
+        outlet: `${outlet} · Public Works Desk`,
         outletIcon: '📋',
-        category: 'obras',
-        headline: `MINISTERIO DA LUZ VERDE A OBRA EN ${road.toUpperCase()} POR ${cost}`,
-        snippet: `El ministro ${name} firmó la resolución que autoriza el inicio de obras en ${road}. El proyecto contempla optimización de carriles y señalización inteligente.`,
+        category: 'projects',
+        headline: `MINISTRY GIVES GREEN LIGHT TO ${road.toUpperCase()} PROJECT (${cost})`,
+        snippet: `Minister ${name} approved the procurement resolution authorizing ground-breaking on ${road}. The project includes dedicated transit lanes and smart signaling.`,
       };
     }
 
     case 'news.constructionStarted': {
-      const road = ctx.roadName || 'la avenida';
+      const road = ctx.roadName || 'the avenue';
       return {
         day: ctx.day,
         severity: 'warning',
         key,
         params: { name: road },
-        outlet: `${outlet} · Tránsito Local`,
+        outlet: `${outlet} · Traffic & Roads`,
         outletIcon: '🚧',
-        category: 'obras',
-        headline: `CIERRAN CARRILES EN ${road.toUpperCase()}: MAQUINARIA INICIA TRABAJOS`,
-        snippet: `Comenzaron las excavaciones en ${road}. Autoridades recomiendan tomar rutas alternas ante la inevitable reducción de capacidad durante la fase constructiva.`,
+        category: 'projects',
+        headline: `LANES CLOSED ON ${road.toUpperCase()}: HEAVY MACHINERY MOBILIZES`,
+        snippet: `Crews have begun excavation and barricade setup along ${road}. Authorities advise motorists to take designated detour routes due to temporary capacity reduction.`,
       };
     }
 
     case 'news.projectHalfway': {
-      const road = ctx.roadName || 'la vía';
+      const road = ctx.roadName || 'the corridor';
       return {
         day: ctx.day,
         severity: 'info',
         key,
         params: { name: road },
-        outlet: `${outlet} · Seguimiento de Infraestructura`,
+        outlet: `${outlet} · Infrastructure Tracking`,
         outletIcon: '🏗️',
-        category: 'obras',
-        headline: `OBRA EN ${road.toUpperCase()} ALCANZA EL 50% DE EJECUCIÓN`,
-        snippet: `Supervisores del ministerio confirman que los trabajos en ${road} avanzan de acuerdo al cronograma previsto por ${name}, a la espera de la pavimentación final.`,
+        category: 'projects',
+        headline: `PROJECT ON ${road.toUpperCase()} REACHES 50% COMPLETION MILESTONE`,
+        snippet: `Ministry supervisors report that work on ${road} is progressing on schedule under ${name}'s oversight, with final track pouring and paving scheduled next.`,
       };
     }
 
     case 'news.subwayCompleted': {
-      const road = ctx.roadName || 'Línea de Metro';
+      const road = ctx.roadName || 'Subway Line';
       return {
         day: ctx.day,
         severity: 'success',
         key,
         params: { name: road, minister: name },
-        outlet: `${outlet} · TRANSMISIÓN ESPECIAL`,
+        outlet: `${outlet} · SPECIAL BROADCAST`,
         outletIcon: '🚇',
-        category: 'obras',
+        category: 'projects',
         isBreaking: true,
-        headline: `DÍA HISTÓRICO: ${name.toUpperCase()} INAUGURA LA NUEVA LÍNEA DE METRO EN ${city.toUpperCase()}`,
-        snippet: `En medio de aplausos ciudadanos, entró en operación oficial la megaobra subterránea en ${road}. Cientos de miles de pasajeros viajarán bajo tierra en minutos.`,
+        headline: `HISTORIC MILESTONE: ${name.toUpperCase()} INAUGURATES NEW METRO LINE IN ${city.toUpperCase()}`,
+        snippet: `Amidst cheering crowds, the major underground rapid transit expansion on ${road} officially entered passenger service. Hundreds of thousands will now commute underground in minutes.`,
         breakingData: {
-          speaker: 'TRANSMISIÓN EN CADENA · MINISTRO DE TRANSPORTES',
-          chyronHeadline: `HISTÓRICO: ${name.toUpperCase()} CORTA CINTA DE NUEVA LÍNEA SUBTERRÁNEA`,
+          speaker: 'OFFICIAL INAUGURAL ADDRESS · TRANSPORTATION MINISTER',
+          chyronHeadline: `HISTORIC EXPANSION: ${name.toUpperCase()} CUTS RIBBON ON NEW UNDERGROUND METRO`,
           chyronColor: 'blue',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'Celebrar el éxito y continuar la expansión de la red',
+          urgentActionPrompt: 'Celebrate the achievement and continue expanding the metropolitan mass transit network.',
         },
       };
     }
 
     case 'news.projectCompleted': {
-      const road = ctx.roadName || 'la avenida';
+      const road = ctx.roadName || 'the avenue';
       return {
         day: ctx.day,
         severity: 'success',
         key,
         params: { name: road },
-        outlet: `${outlet} · Portada`,
+        outlet: `${outlet} · Front Page`,
         outletIcon: '🎉',
-        category: 'obras',
-        headline: `INAUGURACIÓN: CORREDOR VIAL EN ${road.toUpperCase()} ABRE AL PÚBLICO`,
-        snippet: `Corte de cinta en ${road}. El ministro ${name} entregó la infraestructura terminada. Se espera un alivio sustancial en el flujo vehicular desde hoy.`,
+        category: 'projects',
+        headline: `RIBBON-CUTTING: NEW INFRASTRUCTURE OPENS ON ${road.toUpperCase()}`,
+        snippet: `Official opening on ${road}. Minister ${name} delivered the completed transit infrastructure to the public today. Significant traffic relief is anticipated immediately.`,
       };
     }
 
     case 'news.projectCancelled': {
-      const road = ctx.roadName || 'la obra';
+      const road = ctx.roadName || 'the project';
       return {
         day: ctx.day,
         severity: 'warning',
         key,
         params: { name: road },
-        outlet: `${outlet} · Economía y Negocios`,
+        outlet: `${outlet} · Business & Politics`,
         outletIcon: '🛑',
-        category: 'obras',
-        headline: `RESCISIÓN DE CONTRATO: MINISTERIO CANCELA OBRAS EN ${road.toUpperCase()}`,
-        snippet: `Por discrepancias técnicas y retrasos injustificados, el despacho de ${name} anuló el contrato en ${road}. Se liquidarán penalidades contractuales.`,
+        category: 'projects',
+        headline: `CONTRACT TERMINATED: MINISTRY RESCINDS CONTRACT ON ${road.toUpperCase()}`,
+        snippet: `Citing technical non-compliance and contractor delays, ${name}'s office canceled the contract on ${road}. Allocated funds have been refunded to the public budget.`,
       };
     }
 
     case 'news.contractAwardedSuspicion': {
-      const company = ctx.companyName || 'la constructora ganadora';
+      const company = ctx.companyName || 'the winning contractor';
       return {
         day: ctx.day,
         severity: 'warning',
         key,
         params: { company },
-        outlet: `${outlet} · Unidad de Investigación`,
+        outlet: `${outlet} · Investigative Unit`,
         outletIcon: '🔍',
-        category: 'fiscalia',
-        headline: `DENUNCIAN PRESUNTO FAVORITISMO A ${company.toUpperCase()}`,
-        snippet: `Reportaje revela sospechas en la licitación otorgada a ${company}. Bancadas opositoras exigen auditar las reuniones previas del ministro ${name}.`,
+        category: 'investigation',
+        headline: `AUDIT SCRUTINY OVER CONTRACT AWARDED TO ${company.toUpperCase()}`,
+        snippet: `Investigative reporting raises questions regarding the procurement process awarded to ${company}. Opposition lawmakers call for an audit into the bidding awards of Minister ${name}.`,
       };
     }
 
@@ -317,18 +317,18 @@ export function buildRichNewsItem(
         severity: 'danger',
         key,
         params: { name },
-        outlet: `${outlet} · FISCALÍA DE LA NACIÓN`,
+        outlet: `${outlet} · ATTORNEY GENERAL'S DESK`,
         outletIcon: '⚖️',
-        category: 'fiscalia',
+        category: 'investigation',
         isBreaking: true,
-        headline: `FISCALÍA ABRE INVESTIGACIÓN PENAL CONTRA EL DESPACHO DE ${name.toUpperCase()}`,
-        snippet: `El Ministerio Público dispuso diligencias preliminares tras recibir audios y testimonios sobre presuntos sobornos en adjudicación de contratos viales.`,
+        headline: `SPECIAL PROSECUTOR OPENS CRIMINAL PROBE INTO DESPATCH OF ${name.toUpperCase()}`,
+        snippet: `The Anti-Corruption Task Force has initiated formal preliminary proceedings following whistleblower testimony and evidence of contractor kickbacks in transit awards.`,
         breakingData: {
-          speaker: 'DR. CARLOS ALFARO · FISCAL PROVINCIAL ANTICORRUPCIÓN',
-          chyronHeadline: `FISCALÍA INVESTIGA PRESUNTAS COIMAS EN CONTRATOS DEL MINISTRO ${name.toUpperCase()}`,
+          speaker: 'DR. CARLOS ALFARO · SPECIAL ANTI-CORRUPTION PROSECUTOR',
+          chyronHeadline: `PROSECUTOR OPENS PROBE INTO ALLEGED KICKBACKS IN CONTRACTS OF ${name.toUpperCase()}`,
           chyronColor: 'red',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'Cooperar con la fiscalía y transparentar licitaciones',
+          urgentActionPrompt: 'Cooperate transparently with prosecutors and audit all active contracts.',
         },
       };
     }
@@ -339,18 +339,18 @@ export function buildRichNewsItem(
         severity: 'danger',
         key,
         params: { name },
-        outlet: `${outlet} · ALLANAMIENTO EN VIVO`,
+        outlet: `${outlet} · LIVE POLICE ACTION`,
         outletIcon: '🚨',
-        category: 'fiscalia',
+        category: 'investigation',
         isBreaking: true,
-        headline: `ORDEN DE DETENCIÓN: POLICÍA INTERVIENE DESPACHO DE ${name.toUpperCase()}`,
-        snippet: `Mandato judicial detiene la gestión ministerial de ${name} por pruebas contundentes de enriquecimiento ilícito y cobro sistemático de coimas.`,
+        headline: `ARREST WARRANT EXECUTED: POLICE RAID DESPATCH OF ${name.toUpperCase()}`,
+        snippet: `Judicial orders have brought a dramatic halt to ${name}'s ministerial tenure following undeniable evidence of illicit enrichment and systemic contractor bribery.`,
         breakingData: {
-          speaker: 'POLICÍA ANTICORRUPCIÓN · INTERVENCIÓN JUDICIAL',
-          chyronHeadline: `DETIENEN A ${name.toUpperCase()} POR GRAVES CARGOS DE CORRUPCIÓN`,
+          speaker: 'NATIONAL POLICE · JUDICIAL ENFORCEMENT DESK',
+          chyronHeadline: `AUTHORITIES ARREST ${name.toUpperCase()} ON SEVERE BRIBERY & CORRUPTION CHARGES`,
           chyronColor: 'red',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'El mandato ministerial ha concluido por intervención judicial.',
+          urgentActionPrompt: 'Ministerial mandate has terminated following judicial arrest.',
         },
       };
     }
@@ -362,11 +362,11 @@ export function buildRichNewsItem(
         severity: 'info',
         key,
         params: { amount },
-        outlet: `${outlet} · Economía Fiscal`,
+        outlet: `${outlet} · Fiscal Economy`,
         outletIcon: '💰',
-        category: 'economia',
-        headline: `TESORO PÚBLICO TRANSFIERE ${amount} PARA EL PRESUPUESTO ANUAL VIAL`,
-        snippet: `El Ministerio de Economía transfirió la partida presupuestaria anual a las cuentas de ${name}. Se priorizarán megaobras de alto impacto y mantenimiento de vías.`,
+        category: 'economy',
+        headline: `NATIONAL TREASURY TRANSFERS ${amount} ANNUAL BUDGET FOR TRANSPORT INFRASTRUCTURE`,
+        snippet: `The Treasury transferred the annual public transit allocation to Minister ${name}'s accounts today. Funds are earmarked for high-impact transit corridors and road preservation.`,
       };
     }
 
@@ -376,18 +376,18 @@ export function buildRichNewsItem(
         severity: 'success',
         key,
         params: { name },
-        outlet: `${outlet} · RESULTADOS ELECTORALES`,
+        outlet: `${outlet} · ELECTION RESULTS`,
         outletIcon: '🗳️',
-        category: 'politica',
+        category: 'politics',
         isBreaking: true,
-        headline: `RESPALDO EN LAS URNAS: CIUDADANÍA RATIFICA LA GESTIÓN DE ${name.toUpperCase()}`,
-        snippet: `En elecciones generales, los votantes respaldaron la transformación vial lograda por ${name}. Inicia un nuevo mandato quinquenal con bono presupuestario.`,
+        headline: `ELECTORAL VICTORY: CITIZENS RENEW MANDATE FOR MINISTER ${name.toUpperCase()}`,
+        snippet: `In general elections, voters resoundingly endorsed the metropolitan transit modernization achieved under ${name}. A new five-year term begins with a fiscal victory bonus.`,
         breakingData: {
-          speaker: 'CENTRO DE CÓMPUTO ELECTORAL · RESULTADOS OFICIALES',
-          chyronHeadline: `VICTORIA ELECTORAL: ${name.toUpperCase()} CONTINUARÁ EN EL CARGO`,
+          speaker: 'ELECTORAL COMMISSION · OFFICIAL RESULTS',
+          chyronHeadline: `ELECTORAL MANDATE RENEWED: ${name.toUpperCase()} WINS NEW FIVE-YEAR TERM`,
           chyronColor: 'blue',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'Iniciar el nuevo mandato quinquenal con fuerza renovada',
+          urgentActionPrompt: 'Commence the new five-year mandate with renewed momentum.',
         },
       };
     }
@@ -398,18 +398,18 @@ export function buildRichNewsItem(
         severity: 'danger',
         key,
         params: { name },
-        outlet: `${outlet} · ELECCIONES GENERALES`,
+        outlet: `${outlet} · GENERAL ELECTIONS`,
         outletIcon: '🗳️',
-        category: 'politica',
+        category: 'politics',
         isBreaking: true,
-        headline: `DERROTA EN LAS URNAS: CIUDADANÍA VOTA POR EL CAMBIO Y PONE FIN AL MANDATO DE ${name.toUpperCase()}`,
-        snippet: `El descontento por el persistente caos en el tránsito inclinó la balanza electoral en contra de ${name}. Concluye su periodo en el Ministerio.`,
+        headline: `ELECTION DEFEAT: CITIZENS VOTE FOR CHANGE, OUSTING MINISTER ${name.toUpperCase()}`,
+        snippet: `Persistent frustration with vehicular congestion tipped the ballot against ${name}. The minister's tenure concludes following the general election defeat.`,
         breakingData: {
-          speaker: 'FLASH ELECTORAL · ELECCIONES GENERALES',
-          chyronHeadline: `ELECTORADO RECHAZA RÉCORD VIAL: ${name.toUpperCase()} DEJA EL CARGO`,
+          speaker: 'ELECTORAL BROADCAST · ELECTION NIGHT',
+          chyronHeadline: `VOTERS REJECT INCUMBENT TRANSIT RECORD: ${name.toUpperCase()} OUSTED`,
           chyronColor: 'red',
           image: '/assets/congressman.png',
-          urgentActionPrompt: 'El mandato ministerial ha concluido por vía electoral.',
+          urgentActionPrompt: 'Ministerial mandate has concluded via general election defeat.',
         },
       };
     }
@@ -421,11 +421,11 @@ export function buildRichNewsItem(
         severity: severityOverride || 'info',
         key,
         params: { name },
-        outlet: `${outlet} · Columna de Opinión`,
+        outlet: `${outlet} · Editorial Column`,
         outletIcon: '📰',
-        category: 'politica',
-        headline: `BALANCE DE LA SEMANA: LOS DESAFÍOS DEL MINISTRO ${name.toUpperCase()}`,
-        snippet: `Analistas urbanos debaten el rumbo del transporte en ${city}. Con obras en ejecución y una demanda creciente, la gestión de ${name} entra en semanas decisivas.`,
+        category: 'politics',
+        headline: `WEEKLY TRANSIT BRIEFING: URBAN MOBILITY CHALLENGES FOR MINISTER ${name.toUpperCase()}`,
+        snippet: `Urban policy analysts review transit progress across ${city}. With active roadworks underway and vehicle demand surging, ${name}'s administration enters a crucial phase.`,
       };
     }
   }

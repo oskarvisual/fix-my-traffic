@@ -29,18 +29,18 @@ export function generateContractorBids(
   // 1. Honest Technical Consortium
   const techBid: ContractorBid = {
     id: `bid-tech-${seed}`,
-    name: 'Consorcio Andino - Hochtief Infra',
-    country: 'Alemania / Perú',
+    name: 'Andean Consortium - Hochtief Infra',
+    country: 'Germany / International',
     reputation: 'excellent',
-    headline: 'Máxima solvencia técnica internacional y cero disputas.',
+    headline: 'High technical solvency, ISO quality certification, and zero contract disputes.',
     pros: [
-      'Garantía de calidad de estándares europeos',
-      'Cumplimiento estricto de plazos sin adendas',
-      'Auditoría y transparencia 100% limpia',
+      'European engineering standards & quality guarantee',
+      'Strict adherence to deadlines without cost overruns',
+      '100% clean audit and transparency record',
     ],
     cons: [
-      'Costo un 8% superior al presupuesto base',
-      'Exige pago puntual y sin retrasos de tesorería',
+      'Cost is 8% higher than base procurement estimate',
+      'Requires prompt treasury payments without fiscal delays',
     ],
     costMultiplier: 1.08,
     durationMultiplier: 1.0,
@@ -52,17 +52,17 @@ export function generateContractorBids(
   // 2. Low-Cost / Risky Builder
   const lowBid: ContractorBid = {
     id: `bid-low-${seed}`,
-    name: 'Constructora Vías Rápidas & Asociados',
-    country: 'Perú',
+    name: 'FastLane Construction & Associates',
+    country: 'Domestic Private',
     reputation: 'questionable',
-    headline: 'Presupuesto económico y agresivo, pero historial de retrasos.',
+    headline: 'Aggressive budget discounts, but history of project delays and cost addenda.',
     pros: [
-      'Ahorro inmediato del 16% del presupuesto público',
-      'Inicio de obras expedito con maquinaria local',
+      'Immediate 16% public budget savings',
+      'Expedited mobilization with local equipment and crews',
     ],
     cons: [
-      'Alto riesgo de paralizaciones y arbitrajes',
-      'Historial de exigir adendas por imprevistos técnicos (+8% riesgo de auditoría)',
+      'High risk of work stoppages and contractor arbitration',
+      'History of demanding budget addenda for unforeseen issues (+8% audit risk)',
     ],
     costMultiplier: 0.84,
     durationMultiplier: 1.15,
@@ -78,18 +78,18 @@ export function generateContractorBids(
   );
   const corruptBid: ContractorBid = {
     id: `bid-corrupt-${seed}`,
-    name: 'Inversiones & Obras del Pacífico S.A.',
-    country: 'Consorcio Privado',
+    name: 'Pacific Mega-Infrastructure S.A.',
+    country: 'Private Cartel',
     reputation: 'corrupt',
-    headline: 'Garantizan entrega política rápida y ofrecen un "aporte reservado".',
+    headline: 'Fast political delivery with an upfront "confidential ministerial contribution".',
     pros: [
-      'Capacidad de lobby y agilización de trámites burocráticos',
-      'Financiamiento flexible de inicio de obra',
+      'Heavy political lobbying and expedited municipal permits',
+      'Flexible private bridge-financing for immediate ground-breaking',
     ],
     cons: [
-      'Sobreprecio inflado en materiales del 14%',
-      'Ofrecen coima privada: alto riesgo de filtración en la prensa',
-      'Alerta inmediata en la Contraloría si se destapa el escándalo',
+      '14% inflated materials cost surcharge',
+      'Private kickback offered: high risk of investigative press leaks',
+      'Immediate Comptroller scrutiny if scandal is exposed',
     ],
     costMultiplier: 1.14,
     durationMultiplier: 0.95,

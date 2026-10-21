@@ -1,19 +1,20 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-// Playable central zone of Lima (8km x 9km):
-// Covers Historic Centre, Lince, Jesús María, San Isidro, Miraflores, San Borja, Surquillo, Magdalena, San Miguel
-const BBOX = [-12.135, -77.085, -12.042, -76.995]; // [south, west, north, east]
+// Expanded metropolitan zone of Lima (~16km x 18km):
+// Covers Callao, Aeropuerto, Los Olivos, SJL, Ate, La Molina, San Borja, Miraflores, Surco, Chorrillos
+const BBOX = [-12.180, -77.140, -11.950, -76.920]; // [south, west, north, east]
 const CENTER = [-77.035, -12.09];
 
-const QUERY = `[out:json][timeout:60];
+const QUERY = `[out:json][timeout:90];
 way["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link)$"](${BBOX.join(',')});
 out geom;`;
 
 const ENDPOINTS = [
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass.openstreetmap.fr/api/interpreter',
 ];
 
 const ROAD_TYPES = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary'];
@@ -223,9 +224,11 @@ export async function buildDataset() {
     segments,
   };
 
-  const outPath = path.join(process.cwd(), 'public/data/cities/lima/v1/roads.json');
-  await writeFile(outPath, JSON.stringify(dataset));
-  console.log(`Saved real Lima street dataset to ${outPath}!`);
+  const outPath1 = path.join(process.cwd(), 'public/data/cities/lima/v1/roads.json');
+  const outPath2 = path.join(process.cwd(), 'public/data/cities/lima/v2/roads.json');
+  await writeFile(outPath1, JSON.stringify(dataset));
+  await writeFile(outPath2, JSON.stringify(dataset));
+  console.log(`Saved real Lima street dataset to ${outPath1} and ${outPath2}!`);
   console.log(`Stats: ${dataset.stats.segmentCount} streets, ${dataset.stats.totalKm} km, ${names.length} named avenues.`);
 }
 

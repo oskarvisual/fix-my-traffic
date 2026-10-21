@@ -185,11 +185,11 @@ export async function importCity(
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
 
-  onProgress?.('📍 Localizando zona urbana central...', 10);
+  onProgress?.('📍 Locating central urban area...', 10);
 
-  // Clamp bounding box to central urban radius (~10km x 11km)
-  const latDelta = 0.045;
-  const lonDelta = 0.055;
+  // Expanded metropolitan radius (~19km x 23km) for large cities
+  const latDelta = 0.085;
+  const lonDelta = 0.105;
   const bbox: [number, number, number, number] = [
     Math.round((cityMeta.lat - latDelta) * 1e4) / 1e4,
     Math.round((cityMeta.lon - lonDelta) * 1e4) / 1e4,
@@ -197,7 +197,7 @@ export async function importCity(
     Math.round((cityMeta.lon + lonDelta) * 1e4) / 1e4,
   ];
 
-  onProgress?.(`🛣️ Descargando red vial real de ${cityMeta.name}...`, 30);
+  onProgress?.(`🛣️ Downloading real street network for ${cityMeta.name}...`, 30);
 
   const roadQuery = `[out:json][timeout:60];
 way["highway"~"^(motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link)$"](${bbox.join(',')});
@@ -205,11 +205,11 @@ out geom;`;
 
   const roadElements = await fetchFromOverpass(roadQuery);
 
-  onProgress?.(`🚇 Mapeando transporte público (Metro, BRT, trenes)...`, 55);
+  onProgress?.(`🚇 Mapping public transit routes (Metro, BRT, rail)...`, 55);
 
   const transitQuery = `[out:json][timeout:45];
 relation["route"~"^(subway|light_rail|bus|tram)$"](${bbox.join(',')});
-out tags geom 15;`;
+out tags geom 40;`;
 
   let transitElements: any[] = [];
   try {
@@ -218,7 +218,7 @@ out tags geom 15;`;
     console.warn('Transit fetch warning:', err);
   }
 
-  onProgress?.('🧮 Construyendo grafo vial y rutas alternativas...', 75);
+  onProgress?.('🧮 Building road graph and parallel detour corridors...', 75);
 
   const namesSet = new Set<string>();
   const validWays: Array<{
@@ -338,7 +338,11 @@ out tags geom 15;`;
   for (const rel of transitElements) {
     if (rel.type !== 'relation' || !rel.members) continue;
     const rMode = rel.tags?.route || 'bus';
-    const isSub = rMode === 'subway' || rMode === 'light_rail' || rel.tags?.tunnel === 'yes';
+    const isSub =
+      rMode === 'subway' ||
+      rMode === 'light_rail' ||
+      rel.tags?.tunnel === 'yes' ||
+      rel.tags?.railway === 'subway';
     const lines: [number, number][][] = [];
 
     for (const m of rel.members) {
@@ -350,14 +354,14 @@ out tags geom 15;`;
     if (lines.length > 0) {
       transitRoutes.push({
         id: `rel-${rel.id}`,
-        name: rel.tags?.name || rel.tags?.ref || `Línea de ${rMode}`,
+        name: rel.tags?.name || rel.tags?.ref || `${rMode.toUpperCase()} Transit Line`,
         mode: isSub ? 'subway' : 'bus',
         subterranean: isSub,
         ref: rel.tags?.ref || '',
         colour: rel.tags?.colour || fallbackColors[colorIdx++ % fallbackColors.length],
         lines,
       });
-      if (transitRoutes.length >= 10) break;
+      if (transitRoutes.length >= 40) break;
     }
   }
 
@@ -498,7 +502,7 @@ out tags geom 15;`;
   const bundle: CityDataBundle = { roads: roadsDataset, transit: transitDataset };
   registerLoadedBundle(cityId, 1, bundle);
 
-  onProgress?.('☁️ Guardando ciudad en Supabase y caché local...', 90);
+  onProgress?.('☁️ Saving city dataset to Supabase and local cache...', 90);
 
   // Cache in IndexedDB
   if (isIndexedDbAvailable()) {
@@ -521,7 +525,7 @@ out tags geom 15;`;
     }
   }
 
-  onProgress?.('¡Ciudad lista para jugar!', 100);
+  onProgress?.('🎉 City ready for office!', 100);
 
   return { cityId, name: cityMeta.name };
 }

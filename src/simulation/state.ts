@@ -60,7 +60,7 @@ export interface NewsItem {
   snippet?: string;
   outlet?: string;
   outletIcon?: string;
-  category?: 'encuesta' | 'trafico' | 'obras' | 'politica' | 'fiscalia' | 'economia';
+  category?: 'poll' | 'traffic' | 'projects' | 'politics' | 'investigation' | 'economy' | 'encuesta' | 'trafico' | 'obras' | 'politica' | 'fiscalia' | 'economia';
   isBreaking?: boolean;
   breakingData?: {
     speaker: string;

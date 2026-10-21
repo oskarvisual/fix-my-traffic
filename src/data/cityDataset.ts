@@ -64,6 +64,7 @@ export interface TransitRoute {
   ref: string | null;
   colour: string | null;
   lines: LngLat[][];
+  subterranean?: boolean;
 }
 
 export interface CityTransitDataset {

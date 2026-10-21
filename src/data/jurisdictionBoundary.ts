@@ -52,24 +52,26 @@ function makePerimeterLine(name: string, perimeterCoords: [number, number][]): G
 
 // 1. Lima, Perú
 export const LIMA_CAMERA_BOUNDS: [[number, number], [number, number]] = [
-  [-77.18, -12.22], // Southwest: Callao / Chorrillos Pacific ocean
-  [-76.88, -11.96], // Northeast: Ate / Rímac / SJL foothills
+  [-77.28, -12.35], // Southwest: Isla San Lorenzo / Litoral Chorrillos - Villa
+  [-76.75, -11.82], // Northeast: Carabayllo / Chosica / SJL Norte
 ];
 
 export const LIMA_PERIMETER_COORDS: [number, number][] = [
-  [-77.125, -12.030], // Callao Norte / Aeropuerto
-  [-77.120, -12.070], // La Perla / Costa Verde Callao
-  [-77.095, -12.115], // San Miguel / Magdalena Costa
-  [-77.060, -12.148], // Miraflores / Barranco Malecón
-  [-77.025, -12.168], // Chorrillos / Morro Solar
-  [-76.970, -12.160], // Surco Sur / San Juan de Miraflores
-  [-76.955, -12.120], // Santiago de Surco / Panamericana Sur
-  [-76.945, -12.078], // La Molina / Javier Prado Este
-  [-76.950, -12.040], // Santa Anita / Vía de Evitamiento Este
-  [-76.975, -12.012], // El Agustino / SJL Sur
-  [-77.020, -12.008], // Rímac / Cerro San Cristóbal
-  [-77.080, -12.015], // San Martín de Porres Sur
-  [-77.125, -12.030], // Return to Callao Norte
+  [-77.160, -11.950], // Ventanilla / Gambetta Norte
+  [-77.155, -12.020], // Aeropuerto Jorge Chávez / Faucett
+  [-77.165, -12.065], // La Punta / Callao Puerto
+  [-77.130, -12.100], // Costa Verde Callao / San Miguel
+  [-77.075, -12.145], // Magdalena / Miraflores Costa
+  [-77.035, -12.185], // Chorrillos / Villa Pantanos
+  [-76.940, -12.240], // Villa El Salvador / Panamericana Sur
+  [-76.900, -12.180], // VMT / San Juan de Miraflores
+  [-76.880, -12.120], // La Molina / Manchay
+  [-76.870, -12.030], // Ate / Carretera Central / Santa Anita
+  [-76.940, -11.920], // San Juan de Lurigancho Norte
+  [-77.020, -11.860], // Comas / Carabayllo
+  [-77.090, -11.880], // Puente Piedra / Panamericana Norte
+  [-77.140, -11.910], // Los Olivos / San Martín de Porres Norte
+  [-77.160, -11.950], // Close loop
 ];
 
 export const LIMA_INVERTED_MASK = makeInvertedMask('Lima Metropolitana', LIMA_PERIMETER_COORDS);
@@ -77,68 +79,64 @@ export const LIMA_PERIMETER_LINE = makePerimeterLine('Lima Metropolitana', LIMA_
 
 // 2. Buenos Aires, Argentina
 export const BUENOS_AIRES_CAMERA_BOUNDS: [[number, number], [number, number]] = [
-  [-58.530, -34.690], // Southwest: Mataderos / Riachuelo
-  [-58.320, -34.520], // Northeast: Río de la Plata / Núñez
+  [-58.650, -34.780], // Southwest: Ezeiza / La Matanza
+  [-58.240, -34.430], // Northeast: Río de la Plata / San Isidro / Tigre
 ];
 
 export const BUENOS_AIRES_PERIMETER_COORDS: [number, number][] = [
-  [-58.355, -34.585], // Retiro / Puerto
-  [-58.350, -34.615], // Costanera Sur / Reserva Ecológica
-  [-58.360, -34.640], // La Boca / Vuelta de Rocha
-  [-58.390, -34.655], // Barracas / Riachuelo
-  [-58.420, -34.658], // Nueva Pompeya / Puente Alsina
-  [-58.455, -34.655], // Villa Soldati / Autopista Dellepiane
-  [-58.485, -34.645], // Lugano / Mataderos
-  [-58.495, -34.620], // Floresta / Liniers
-  [-58.490, -34.590], // Villa Devoto / General Paz
-  [-58.475, -34.565], // Saavedra / Coghlan
-  [-58.445, -34.545], // Núñez / Monumental
-  [-58.395, -34.560], // Palermo Chico / Aeroparque
-  [-58.365, -34.575], // Recoleta / Retiro Port
-  [-58.355, -34.585], // Close loop
+  [-58.330, -34.560], // Río de la Plata / Aeroparque
+  [-58.320, -34.620], // Costanera Sur / Puerto Madero
+  [-58.340, -34.665], // Avellaneda / Dock Sud
+  [-58.380, -34.700], // Lanús / Riachuelo Sur
+  [-58.450, -34.710], // Lomas de Zamora Norte
+  [-58.520, -34.690], // La Matanza / Autopista Riccheri
+  [-58.550, -34.640], // Ciudadela / Liniers Oeste
+  [-58.540, -34.580], // San Martín / Tres de Febrero
+  [-58.500, -34.520], // Vicente López / General Paz Norte
+  [-58.460, -34.500], // Olivos / Río de la Plata
+  [-58.380, -34.530], // Belgrano / Núñez Costa
+  [-58.330, -34.560], // Close loop
 ];
 
 // 3. Santiago, Chile
 export const SANTIAGO_CAMERA_BOUNDS: [[number, number], [number, number]] = [
-  [-70.760, -33.520], // Southwest: Cerrillos / Maipú Norte
-  [-70.540, -33.370], // Northeast: Las Condes / Vitacura
+  [-70.880, -33.620], // Southwest: Maipú Sur / San Bernardo
+  [-70.440, -33.280], // Northeast: Lo Barnechea / Chicureo
 ];
 
 export const SANTIAGO_PERIMETER_COORDS: [number, number][] = [
-  [-70.640, -33.400], // Huechuraba / Cerro San Cristóbal
-  [-70.595, -33.405], // Vitacura / Parque Bicentenario
-  [-70.575, -33.420], // Las Condes / El Golf
-  [-70.585, -33.445], // Tobalaba / Providencia
-  [-70.600, -33.475], // Ñuñoa / Estadio Nacional
-  [-70.625, -33.490], // San Joaquín / San Miguel
-  [-70.665, -33.492], // Pedro Aguirre Cerda / San Miguel Sur
-  [-70.705, -33.480], // Cerrillos / Autopista Central
-  [-70.725, -33.455], // Estación Central / Pajaritos
-  [-70.720, -33.430], // Quinta Normal / Renca
-  [-70.685, -33.405], // Conchalí / Recoleta Norte
-  [-70.640, -33.400], // Close loop
+  [-70.620, -33.350], // Huechuraba / Chicureo
+  [-70.520, -33.360], // Lo Barnechea Norte
+  [-70.490, -33.400], // Las Condes Alto
+  [-70.530, -33.460], // La Reina / Peñalolén
+  [-70.560, -33.530], // La Florida / Puente Alto Norte
+  [-70.630, -33.580], // San Bernardo / Autopista Central
+  [-70.720, -33.570], // San Ramón / La Cisterna Sur
+  [-70.790, -33.530], // Maipú / Pajaritos Sur
+  [-70.800, -33.440], // Pudahuel / Aeropuerto SCL
+  [-70.760, -33.380], // Renca / Cerro Colorado
+  [-70.690, -33.350], // Conchalí / Quilicura
+  [-70.620, -33.350], // Close loop
 ];
 
 // 4. Ciudad de México (CDMX)
 export const CDMX_CAMERA_BOUNDS: [[number, number], [number, number]] = [
-  [-99.260, 19.330], // Southwest: San Ángel / Mixcoac
-  [-99.040, 19.510], // Northeast: Gustavo A. Madero / AICM
+  [-99.380, 19.220], // Southwest: Magdalena Contreras / Cuajimalpa
+  [-98.920, 19.620], // Northeast: Ecatepec / Texcoco
 ];
 
 export const CDMX_PERIMETER_COORDS: [number, number][] = [
-  [-99.135, 19.480], // Insurgentes Norte / Lindavista
-  [-99.100, 19.460], // Canal del Norte / Consulado
-  [-99.075, 19.440], // Venustiano Carranza / Terminal AICM
-  [-99.080, 19.410], // Iztacalco / Agrícola Oriental
-  [-99.105, 19.385], // Viaducto / Iztapalapa Norte
-  [-99.140, 19.365], // Calzada de Tlalpan / Portales
-  [-99.175, 19.365], // Del Valle Sur / Eje Central
-  [-99.195, 19.385], // San Pedro de los Pinos / Mixcoac
-  [-99.215, 19.410], // Tacubaya / Bosque de Chapultepec
-  [-99.225, 19.440], // Polanco / Palmas
-  [-99.210, 19.470], // Azcapotzalco / Tacuba
-  [-99.175, 19.480], // La Raza / Circuito Interior Norte
-  [-99.135, 19.480], // Close loop
+  [-99.120, 19.570], // Tlalnepantla / Gustavo A. Madero Norte
+  [-99.040, 19.530], // Ecatepec / Indios Verdes
+  [-99.000, 19.460], // Texcoco / AICM Oriente
+  [-98.980, 19.380], // Nezahualcóyotl / Iztapalapa Oriente
+  [-99.040, 19.300], // Xochimilco / Periférico Sur
+  [-99.140, 19.260], // Tlalpan Sur
+  [-99.230, 19.300], // San Ángel / Pedregal / Periférico Poniente
+  [-99.300, 19.360], // Santa Fe / Bosques de las Lomas
+  [-99.280, 19.450], // Naucalpan / Toreo de Cuatro Caminos
+  [-99.220, 19.530], // Azcapotzalco / Satélite
+  [-99.120, 19.570], // Close loop
 ];
 
 const JURISDICTIONS: Record<string, CityJurisdiction> = {
@@ -146,7 +144,7 @@ const JURISDICTIONS: Record<string, CityJurisdiction> = {
     cityId: 'lima',
     name: 'Lima Metropolitana',
     cameraBounds: LIMA_CAMERA_BOUNDS,
-    minZoom: 11.2,
+    minZoom: 9.8,
     perimeterCoords: LIMA_PERIMETER_COORDS,
     invertedMask: LIMA_INVERTED_MASK,
     perimeterLine: LIMA_PERIMETER_LINE,
@@ -155,7 +153,7 @@ const JURISDICTIONS: Record<string, CityJurisdiction> = {
     cityId: 'buenos_aires',
     name: 'Ciudad Autónoma de Buenos Aires',
     cameraBounds: BUENOS_AIRES_CAMERA_BOUNDS,
-    minZoom: 11.2,
+    minZoom: 9.8,
     perimeterCoords: BUENOS_AIRES_PERIMETER_COORDS,
     invertedMask: makeInvertedMask('Buenos Aires', BUENOS_AIRES_PERIMETER_COORDS),
     perimeterLine: makePerimeterLine('Buenos Aires', BUENOS_AIRES_PERIMETER_COORDS),
@@ -164,7 +162,7 @@ const JURISDICTIONS: Record<string, CityJurisdiction> = {
     cityId: 'santiago',
     name: 'Santiago de Chile (Gran Santiago)',
     cameraBounds: SANTIAGO_CAMERA_BOUNDS,
-    minZoom: 11.2,
+    minZoom: 9.8,
     perimeterCoords: SANTIAGO_PERIMETER_COORDS,
     invertedMask: makeInvertedMask('Gran Santiago', SANTIAGO_PERIMETER_COORDS),
     perimeterLine: makePerimeterLine('Gran Santiago', SANTIAGO_PERIMETER_COORDS),
@@ -173,7 +171,7 @@ const JURISDICTIONS: Record<string, CityJurisdiction> = {
     cityId: 'cdmx',
     name: 'Ciudad de México (Valle de México)',
     cameraBounds: CDMX_CAMERA_BOUNDS,
-    minZoom: 11.0,
+    minZoom: 9.8,
     perimeterCoords: CDMX_PERIMETER_COORDS,
     invertedMask: makeInvertedMask('Ciudad de México', CDMX_PERIMETER_COORDS),
     perimeterLine: makePerimeterLine('Ciudad de México', CDMX_PERIMETER_COORDS),

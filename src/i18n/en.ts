@@ -26,13 +26,13 @@ export const en = {
   'city.simulatedTag': 'simulated',
   'city.gameValueTag': 'game value',
   'city.lima.transit':
-    'Línea 1 del Metro, Línea 2 subterránea, Metropolitano BRT, Corredores Complementarios y congestión costera.',
+    'Metro Line 1, underground Line 2, Metropolitano BRT, Red & Blue corridors, and coastal gridlock.',
   'city.buenos_aires.transit':
-    'Red histórica de Subte (Líneas A, B, C, D, E, H), Metrobús 9 de Julio y cuadrícula ortogonal de avenidas.',
+    'Historic Subte subway network (Lines A, B, C, D, E, H), 9 de Julio Metrobus, and orthogonal avenue grid.',
   'city.santiago.transit':
-    'Metro de Santiago (Líneas 1, 2, 3, 5, 6), red de buses eléctricos Red Movilidad y cuellos de botella geográficos.',
+    'Santiago Metro (Lines 1, 2, 3, 5, 6), Red Movilidad electric bus fleet, and mountain valley bottlenecks.',
   'city.cdmx.transit':
-    'Sistema de Transporte Colectivo Metro (Líneas 1, 2, 3, 7, 9), Metrobús Insurgentes y Reforma, y megaciudad de 20M+ hab.',
+    'Metro collective transit system (Lines 1, 2, 3, 7, 9), Insurgentes & Reforma Metrobus, and 20M+ megalopolis.',
   'difficulty.easy': 'Easy',
   'difficulty.normal': 'Normal',
   'difficulty.hard': 'Hard',
@@ -79,8 +79,8 @@ export const en = {
   'tools.comingSoon': 'Coming soon',
   'tools.hotspots': 'Worst corridors',
   'tools.hotspotsHint': 'Click a road to inspect it.',
-  'tools.activeProjects': 'Proyectos Activos (En Obras)',
-  'tools.noProjects': 'No hay proyectos activos en este momento.',
+  'tools.activeProjects': 'Active Projects (Under Construction)',
+  'tools.noProjects': 'No active projects at this time.',
 
   'road.inspect': 'Road inspection',
   'road.unnamed': 'Unnamed corridor',
@@ -106,10 +106,10 @@ export const en = {
   'roadType.tertiary': 'Local connector',
 
   'draft.title': 'Project Drafting & Procurement',
-  'draft.hint': 'Time is PAUSED while planning. Click corridor segments to extend. Select a contractor bid below.',
+  'draft.hint': 'Click corridor segments to extend. Select a contractor bid below.',
   'draft.selectStreet': 'Expand along whole avenue',
   'draft.clear': 'Clear',
-  'draft.cancel': 'Cancel draft (Resume)',
+  'draft.cancel': 'Cancel draft',
   'draft.length': 'Corridor length',
   'draft.cost': 'Estimated base cost',
   'draft.duration': 'Duration',
@@ -137,10 +137,10 @@ export const en = {
   'bidding.riskPill': 'Corruption alert risk: +{risk}%',
   'bidding.delayRiskPill': 'Delay / dispute risk: {pct}%',
 
-  'project.phase.planning': 'Planificación',
-  'project.phase.procurement': 'Licitación',
-  'project.phase.construction': 'En Construcción',
-  'project.phase.completed': 'En Operación',
+  'project.phase.planning': 'Planning',
+  'project.phase.procurement': 'Procurement / Bidding',
+  'project.phase.construction': 'Under Construction',
+  'project.phase.completed': 'In Operation',
   'project.progress': '{pct}% built',
   'project.details': 'Project',
   'project.cost': 'Cost',
@@ -153,7 +153,7 @@ export const en = {
 
   'news.title': 'Ministry Intelligence & News Feed',
   'news.empty': 'No news yet.',
-  'news.tookOffice': 'You have been sworn in as Minister of Transportation in Lima. The city awaits solutions.',
+  'news.tookOffice': 'You have been sworn in as Minister of Transportation. The city awaits leadership and infrastructure solutions.',
   'news.projectApproved': 'Project on {name} approved for {cost}.',
   'news.constructionStarted': 'Works commenced on {name}. Road lanes closed; traffic diverted to parallel avenues.',
   'news.projectHalfway': 'Works on {name} reach 50% completion.',

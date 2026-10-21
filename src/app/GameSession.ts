@@ -31,6 +31,7 @@ export class GameSession {
   private snapshot: SessionSnapshot;
   private listeners = new Set<() => void>();
   private rafId: number | null = null;
+  private bgIntervalId: ReturnType<typeof setInterval> | null = null;
   private lastFrame: number | null = null;
   private dayProgress: number;
   private dirty = false;
@@ -46,7 +47,7 @@ export class GameSession {
     this.snapshot = {
       state: initial,
       traffic: computeGameTraffic(initial, ctx),
-      speed: 0,
+      speed: 1, // Default speed is 1x normal simulation
       lastSavedAt: null,
     };
   }
@@ -63,34 +64,67 @@ export class GameSession {
     for (const l of this.listeners) l();
   }
 
-  /** Start the real-time loop and browser lifecycle hooks. Simulation starts paused. */
+  /** Start the real-time loop and browser lifecycle hooks. Keeps running even when tab is in background. */
   start(): void {
     if (typeof window === 'undefined' || this.rafId !== null) return;
-    const onHidden = () => {
+
+    const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        this.setSpeed(0);
+        // Tab is hidden / backgrounded: autosave and keep ticking via interval
         void this.save();
+        if (this.bgIntervalId === null) {
+          this.bgIntervalId = setInterval(() => {
+            if (this.snapshot.speed > 0) {
+              const now = performance.now();
+              const dt = this.lastFrame === null ? 0 : (now - this.lastFrame) / 1000;
+              this.lastFrame = now;
+              this.tick(Math.min(dt, 2.0));
+            }
+          }, 500);
+        }
+      } else {
+        // Tab restored to foreground: clear background interval, resume RAF
+        if (this.bgIntervalId !== null) {
+          clearInterval(this.bgIntervalId);
+          this.bgIntervalId = null;
+        }
+        this.lastFrame = performance.now();
       }
     };
+
     const onPageHide = () => void this.save();
-    document.addEventListener('visibilitychange', onHidden);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('pagehide', onPageHide);
+
     this.detachLifecycle = () => {
-      document.removeEventListener('visibilitychange', onHidden);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', onPageHide);
+      if (this.bgIntervalId !== null) {
+        clearInterval(this.bgIntervalId);
+        this.bgIntervalId = null;
+      }
     };
+
     const frame = (now: number) => {
-      const dt = this.lastFrame === null ? 0 : (now - this.lastFrame) / 1000;
-      this.lastFrame = now;
-      this.tick(Math.min(dt, 0.25));
+      if (document.visibilityState !== 'hidden') {
+        const dt = this.lastFrame === null ? 0 : (now - this.lastFrame) / 1000;
+        this.lastFrame = now;
+        this.tick(Math.min(dt, 0.25));
+      }
       this.rafId = requestAnimationFrame(frame);
     };
+
+    this.lastFrame = performance.now();
     this.rafId = requestAnimationFrame(frame);
   }
 
   stop(): void {
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     this.rafId = null;
+    if (this.bgIntervalId !== null) {
+      clearInterval(this.bgIntervalId);
+      this.bgIntervalId = null;
+    }
     this.lastFrame = null;
     this.detachLifecycle?.();
     this.detachLifecycle = null;
