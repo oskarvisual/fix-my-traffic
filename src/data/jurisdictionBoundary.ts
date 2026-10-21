@@ -139,6 +139,42 @@ export const CDMX_PERIMETER_COORDS: [number, number][] = [
   [-99.120, 19.570], // Close loop
 ];
 
+// 5. Madrid, España
+export const MADRID_CAMERA_BOUNDS: [[number, number], [number, number]] = [
+  [-3.82, 40.34],
+  [-3.58, 40.50],
+];
+
+export const MADRID_PERIMETER_COORDS: [number, number][] = [
+  [-3.765, 40.475],
+  [-3.700, 40.480],
+  [-3.635, 40.475],
+  [-3.630, 40.420],
+  [-3.635, 40.365],
+  [-3.700, 40.360],
+  [-3.765, 40.365],
+  [-3.770, 40.420],
+  [-3.765, 40.475],
+];
+
+// 6. New York, United States
+export const NEW_YORK_CAMERA_BOUNDS: [[number, number], [number, number]] = [
+  [-74.06, 40.68],
+  [-73.90, 40.83],
+];
+
+export const NEW_YORK_PERIMETER_COORDS: [number, number][] = [
+  [-74.025, 40.810],
+  [-73.970, 40.815],
+  [-73.930, 40.810],
+  [-73.925, 40.750],
+  [-73.930, 40.695],
+  [-73.970, 40.690],
+  [-74.025, 40.695],
+  [-74.030, 40.750],
+  [-74.025, 40.810],
+];
+
 const JURISDICTIONS: Record<string, CityJurisdiction> = {
   lima: {
     cityId: 'lima',
@@ -175,6 +211,24 @@ const JURISDICTIONS: Record<string, CityJurisdiction> = {
     perimeterCoords: CDMX_PERIMETER_COORDS,
     invertedMask: makeInvertedMask('Ciudad de México', CDMX_PERIMETER_COORDS),
     perimeterLine: makePerimeterLine('Ciudad de México', CDMX_PERIMETER_COORDS),
+  },
+  madrid: {
+    cityId: 'madrid',
+    name: 'Comunidad de Madrid',
+    cameraBounds: MADRID_CAMERA_BOUNDS,
+    minZoom: 9.8,
+    perimeterCoords: MADRID_PERIMETER_COORDS,
+    invertedMask: makeInvertedMask('Madrid', MADRID_PERIMETER_COORDS),
+    perimeterLine: makePerimeterLine('Madrid', MADRID_PERIMETER_COORDS),
+  },
+  new_york: {
+    cityId: 'new_york',
+    name: 'New York City (NYC)',
+    cameraBounds: NEW_YORK_CAMERA_BOUNDS,
+    minZoom: 9.8,
+    perimeterCoords: NEW_YORK_PERIMETER_COORDS,
+    invertedMask: makeInvertedMask('New York', NEW_YORK_PERIMETER_COORDS),
+    perimeterLine: makePerimeterLine('New York', NEW_YORK_PERIMETER_COORDS),
   },
 };
 

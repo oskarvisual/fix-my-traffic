@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "cityId": "madrid",
+  "datasetVersion": 1,
+  "attribution": "© OpenStreetMap contributors · Metro de Madrid · EMT Madrid",
+  "routes": [
+    {
+      "id": "metro-mad-l1",
+      "name": "Línea 1 Metro de Madrid (Pinar de Chamartín — Valdecarros)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L1",
+      "colour": "#00a2e8",
+      "lines": [
+        [
+          [
+            -3.666,
+            40.478
+          ],
+          [
+            -3.689,
+            40.468
+          ],
+          [
+            -3.7,
+            40.448
+          ],
+          [
+            -3.703,
+            40.432
+          ],
+          [
+            -3.703,
+            40.42
+          ],
+          [
+            -3.701,
+            40.413
+          ],
+          [
+            -3.693,
+            40.407
+          ],
+          [
+            -3.668,
+            40.395
+          ],
+          [
+            -3.635,
+            40.37
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-mad-l6",
+      "name": "Línea 6 Circular Metro de Madrid",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L6",
+      "colour": "#9b9b9b",
+      "lines": [
+        [
+          [
+            -3.719,
+            40.435
+          ],
+          [
+            -3.703,
+            40.448
+          ],
+          [
+            -3.688,
+            40.447
+          ],
+          [
+            -3.67,
+            40.435
+          ],
+          [
+            -3.667,
+            40.418
+          ],
+          [
+            -3.673,
+            40.402
+          ],
+          [
+            -3.694,
+            40.393
+          ],
+          [
+            -3.715,
+            40.4
+          ],
+          [
+            -3.725,
+            40.418
+          ],
+          [
+            -3.719,
+            40.435
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-mad-l10",
+      "name": "Línea 10 Metro de Madrid (Chamartín — Puerta del Sur)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L10",
+      "colour": "#004b97",
+      "lines": [
+        [
+          [
+            -3.688,
+            40.472
+          ],
+          [
+            -3.689,
+            40.458
+          ],
+          [
+            -3.691,
+            40.445
+          ],
+          [
+            -3.691,
+            40.43
+          ],
+          [
+            -3.697,
+            40.424
+          ],
+          [
+            -3.712,
+            40.423
+          ],
+          [
+            -3.719,
+            40.412
+          ],
+          [
+            -3.72,
+            40.395
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "emt-mad-27",
+      "name": "EMT Línea 27 (Plaza de Castilla — Embajadores)",
+      "mode": "bus",
+      "ref": "27",
+      "colour": "#0072ce",
+      "lines": [
+        [
+          [
+            -3.689,
+            40.466
+          ],
+          [
+            -3.689,
+            40.45
+          ],
+          [
+            -3.69,
+            40.435
+          ],
+          [
+            -3.692,
+            40.42
+          ],
+          [
+            -3.694,
+            40.41
+          ],
+          [
+            -3.702,
+            40.405
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "metro-mad-l2",
+      "name": "Línea 2 Metro de Madrid (Cuatro Caminos — Ventas)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "L2",
+      "colour": "#e61d2b",
+      "lines": [
+        [
+          [
+            -3.703,
+            40.448
+          ],
+          [
+            -3.703,
+            40.438
+          ],
+          [
+            -3.706,
+            40.428
+          ],
+          [
+            -3.707,
+            40.424
+          ],
+          [
+            -3.711,
+            40.418
+          ],
+          [
+            -3.703,
+            40.417
+          ],
+          [
+            -3.694,
+            40.419
+          ],
+          [
+            -3.675,
+            40.424
+          ],
+          [
+            -3.663,
+            40.431
+          ]
+        ]
+      ]
+    }
+  ]
+}

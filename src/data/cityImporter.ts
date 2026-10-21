@@ -1,4 +1,3 @@
-import { env, isSupabaseConfigured } from '../config/env';
 import type { CityDataBundle, CityRoadDataset, CityTransitDataset } from './cityDataset';
 import { registerCustomCity, type CityCatalogEntry } from './cityCatalog';
 import { registerCustomJurisdiction, type CityJurisdiction } from './jurisdictionBoundary';
@@ -502,7 +501,7 @@ out tags geom 40;`;
   const bundle: CityDataBundle = { roads: roadsDataset, transit: transitDataset };
   registerLoadedBundle(cityId, 1, bundle);
 
-  onProgress?.('☁️ Saving city dataset to Supabase and local cache...', 90);
+  onProgress?.('💾 Saving city dataset to local cache...', 90);
 
   // Cache in IndexedDB
   if (isIndexedDbAvailable()) {
@@ -516,77 +515,9 @@ out tags geom 40;`;
     }
   }
 
-  // Upload to Supabase if configured
-  if (isSupabaseConfigured()) {
-    try {
-      await uploadToSupabase(cityId, cityMeta, roadsDataset, transitDataset);
-    } catch (e) {
-      console.warn('Supabase upload skipped/failed:', e);
-    }
-  }
-
   onProgress?.('🎉 City ready for office!', 100);
 
   return { cityId, name: cityMeta.name };
-}
-
-async function uploadToSupabase(
-  cityId: string,
-  cityMeta: OsmCitySearchResult,
-  roads: CityRoadDataset,
-  transit: CityTransitDataset,
-) {
-  const url = env.supabaseUrl;
-  const anonKey = env.supabaseAnonKey;
-  if (!url || !anonKey) return;
-
-  const storageBase = `${url}/storage/v1/object/city-datasets`;
-  const headers = {
-    apikey: anonKey,
-    Authorization: `Bearer ${anonKey}`,
-    'Content-Type': 'application/json',
-    'x-upsert': 'true',
-  };
-
-  // Upload roads.json
-  await fetch(`${storageBase}/${cityId}/v1/roads.json`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(roads),
-  });
-
-  // Upload transit.json
-  await fetch(`${storageBase}/${cityId}/v1/transit.json`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(transit),
-  });
-
-  // Insert city into city_datasets table
-  await fetch(`${url}/rest/v1/city_datasets`, {
-    method: 'POST',
-    headers: { ...headers, Prefer: 'resolution=merge-duplicates' },
-    body: JSON.stringify({
-      city_id: cityId,
-      name: cityMeta.name,
-      country: cityMeta.country,
-      center: [cityMeta.lon, cityMeta.lat],
-      bbox: roads.city.bbox,
-    }),
-  });
-
-  // Insert version
-  await fetch(`${url}/rest/v1/city_dataset_versions`, {
-    method: 'POST',
-    headers: { ...headers, Prefer: 'resolution=merge-duplicates' },
-    body: JSON.stringify({
-      city_id: cityId,
-      dataset_version: 1,
-      roads_bundle_path: `${cityId}/v1/roads.json`,
-      transit_bundle_path: `${cityId}/v1/transit.json`,
-      status: 'published',
-    }),
-  });
 }
 
 function getFlagEmoji(countryCode: string): string {

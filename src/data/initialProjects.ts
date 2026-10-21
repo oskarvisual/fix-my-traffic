@@ -274,5 +274,131 @@ export function getInitialCityProjects(cityId: string, network: RoadNetwork): Pr
     ];
   }
 
+  if (cityId === 'madrid') {
+    return [
+      {
+        id: 'mad-proj-metro-l11',
+        typeId: 'subway',
+        name: 'Metro de Madrid Línea 11 (Plaza Elíptica — Conde de Casal)',
+        segmentIds: [],
+        streetKm: 6.3,
+        cost: 210_000_000,
+        approvedDay: -150,
+        phase: 'construction',
+        phaseStartDay: -110,
+        planningDays: 40,
+        constructionDays: 320,
+        progress: 0.55,
+        completedDay: null,
+        contractor: {
+          id: 'c-acs',
+          name: 'ACS Dragados',
+          bribeReceived: 0,
+          corruptionRisk: 0.12,
+          delayRisk: 0.18,
+        },
+        subwayStations: [
+          { name: 'Plaza Elíptica', coordinates: [-3.719, 40.385] },
+          { name: 'Comillas', coordinates: [-3.712, 40.392] },
+          { name: 'Madrid Río', coordinates: [-3.705, 40.398] },
+          { name: 'Palos de la Frontera', coordinates: [-3.694, 40.403] },
+          { name: 'Atocha', coordinates: [-3.691, 40.407] },
+          { name: 'Conde de Casal', coordinates: [-3.670, 40.405] },
+        ],
+        subwayAlignment: [
+          [-3.719, 40.385],
+          [-3.712, 40.392],
+          [-3.705, 40.398],
+          [-3.694, 40.403],
+          [-3.691, 40.407],
+          [-3.670, 40.405],
+        ],
+      },
+      {
+        id: 'mad-proj-castellana-bus',
+        typeId: 'brt',
+        name: 'Plataforma Reservada Bus-VAO Castellana',
+        segmentIds: findSegmentIds(network, ['castellana', 'recoletos', 'prado'], 6),
+        streetKm: 4.8,
+        cost: 85_000_000,
+        approvedDay: -90,
+        phase: 'construction',
+        phaseStartDay: -60,
+        planningDays: 30,
+        constructionDays: 180,
+        progress: 0.70,
+        completedDay: null,
+        contractor: {
+          id: 'c-fcc',
+          name: 'FCC Construcción',
+          bribeReceived: 0,
+          corruptionRisk: 0.10,
+          delayRisk: 0.12,
+        },
+      },
+    ];
+  }
+
+  if (cityId === 'new_york') {
+    return [
+      {
+        id: 'ny-proj-sas-ph2',
+        typeId: 'subway',
+        name: 'Second Avenue Subway Phase 2 (96th St to 125th St)',
+        segmentIds: [],
+        streetKm: 2.5,
+        cost: 450_000_000,
+        approvedDay: -200,
+        phase: 'construction',
+        phaseStartDay: -150,
+        planningDays: 50,
+        constructionDays: 450,
+        progress: 0.45,
+        completedDay: null,
+        contractor: {
+          id: 'c-skanska',
+          name: 'Skanska USA Civil',
+          bribeReceived: 0,
+          corruptionRisk: 0.08,
+          delayRisk: 0.25,
+        },
+        subwayStations: [
+          { name: '96th St', coordinates: [-73.951, 40.784] },
+          { name: '106th St', coordinates: [-73.945, 40.791] },
+          { name: '116th St', coordinates: [-73.939, 40.798] },
+          { name: '125th St / Harlem', coordinates: [-73.933, 40.804] },
+        ],
+        subwayAlignment: [
+          [-73.951, 40.784],
+          [-73.945, 40.791],
+          [-73.939, 40.798],
+          [-73.933, 40.804],
+        ],
+      },
+      {
+        id: 'ny-proj-m15-sbs',
+        typeId: 'brt',
+        name: 'First & Second Avenues Dedicated Busway Extension',
+        segmentIds: findSegmentIds(network, ['1st ave', 'first avenue', '2nd ave', 'second avenue'], 6),
+        streetKm: 5.2,
+        cost: 95_000_000,
+        approvedDay: -80,
+        phase: 'construction',
+        phaseStartDay: -50,
+        planningDays: 30,
+        constructionDays: 160,
+        progress: 0.65,
+        completedDay: null,
+        contractor: {
+          id: 'c-tutor-perini',
+          name: 'Tutor Perini Corporation',
+          bribeReceived: 0,
+          corruptionRisk: 0.15,
+          delayRisk: 0.20,
+        },
+      },
+    ];
+  }
+
   return [];
 }

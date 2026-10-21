@@ -8,8 +8,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 describe('Multi-City Catalog & Datasets', () => {
-  it('contains the 4 requested cities with appropriate difficulty tiers', () => {
-    expect(CITY_CATALOG.length).toBe(4);
+  it('contains the 6 requested cities with appropriate difficulty tiers', () => {
+    expect(CITY_CATALOG.length).toBe(6);
 
     const ba = findCity('buenos_aires');
     expect(ba).toBeDefined();
@@ -21,10 +21,20 @@ describe('Multi-City Catalog & Datasets', () => {
     expect(santiago?.difficulty).toBe('normal');
     expect(santiago?.initialBudget).toBe(750_000_000);
 
+    const madrid = findCity('madrid');
+    expect(madrid).toBeDefined();
+    expect(madrid?.difficulty).toBe('normal');
+    expect(madrid?.initialBudget).toBe(950_000_000);
+
     const lima = findCity('lima');
     expect(lima).toBeDefined();
     expect(lima?.difficulty).toBe('hard');
     expect(lima?.initialBudget).toBe(650_000_000);
+
+    const ny = findCity('new_york');
+    expect(ny).toBeDefined();
+    expect(ny?.difficulty).toBe('hard');
+    expect(ny?.initialBudget).toBe(1_250_000_000);
 
     const cdmx = findCity('cdmx');
     expect(cdmx).toBeDefined();

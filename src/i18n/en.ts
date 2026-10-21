@@ -6,7 +6,7 @@ export const en = {
   'app.newGame': 'New game',
   'app.continue': 'Continue as minister',
   'app.simulatedDisclaimer':
-    'Road geometry from OpenStreetMap & Supabase. Traffic is simulated game data, calibrated with city corridors.',
+    'Road geometry from OpenStreetMap. Traffic is simulated game data, calibrated with city corridors.',
 
   'city.selectTitle': 'Select your city',
   'city.searchLabel': 'Search city',
@@ -33,6 +33,10 @@ export const en = {
     'Santiago Metro (Lines 1, 2, 3, 5, 6), Red Movilidad electric bus fleet, and mountain valley bottlenecks.',
   'city.cdmx.transit':
     'Metro collective transit system (Lines 1, 2, 3, 7, 9), Insurgentes & Reforma Metrobus, and 20M+ megalopolis.',
+  'city.madrid.transit':
+    'Metro de Madrid (Lines 1, 6 Circular, 10), EMT bus lines, M-30 ring road, and Castellana radial axis.',
+  'city.new_york.transit':
+    'MTA New York City Subway (Lines 1, 4/5/6, A/C/E, 7), M15 Select Bus Service, and dense Manhattan avenue grid.',
   'difficulty.easy': 'Easy',
   'difficulty.normal': 'Normal',
   'difficulty.hard': 'Hard',
@@ -49,7 +53,7 @@ export const en = {
   'hud.pause': 'Pause',
   'hud.speedX': '{n}×',
   'hud.turbo': 'Turbo (debug)',
-  'hud.simulatedBadge': 'Lima · Connected to Supabase',
+  'hud.simulatedBadge': 'Real OSM Data · Local Engine',
   'hud.saved': 'Saved',
 
   'map.label': 'Simulated traffic map of {city}',

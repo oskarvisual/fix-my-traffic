@@ -1,18 +1,17 @@
 /**
- * Wires data sources together: city repository chain -> road network ->
+ * Wires data sources together: city repository -> road network ->
  * traffic provider baseline. Returns everything the simulation needs.
  */
-import { env, isSupabaseConfigured } from '../config/env';
+import { env } from '../config/env';
 import type { CityDataBundle } from '../data/cityDataset';
 import type { CityDataRepository } from '../data/CityDataRepository';
 import { StaticCityRepository } from '../data/StaticCityRepository';
-import { SupabaseCityRepository } from '../data/SupabaseCityRepository';
 import { MockTrafficProvider } from '../data/traffic/MockTrafficProvider';
 import type { TrafficSnapshot } from '../data/traffic/TrafficDataProvider';
 import type { SimulationContext } from '../simulation/game';
 import { hashString } from '../simulation/random';
 import { buildRoadNetwork } from '../simulation/traffic/network';
-import { CachedCityRepository, FallbackCityRepository } from '../storage/cityCache';
+import { CachedCityRepository } from '../storage/cityCache';
 import { IndexedDbStore, isIndexedDbAvailable } from '../storage/keyValueStore';
 
 export interface LoadedCity {
@@ -25,15 +24,10 @@ let repository: CityDataRepository | null = null;
 
 export function getCityRepository(): CityDataRepository {
   if (repository) return repository;
-  const sources: CityDataRepository[] = [];
-  if (isSupabaseConfigured()) {
-    sources.push(new SupabaseCityRepository(env.supabaseUrl as string, env.supabaseAnonKey as string));
-  }
-  sources.push(new StaticCityRepository(env.baseUrl));
-  const chain = new FallbackCityRepository(sources);
+  const staticRepo = new StaticCityRepository(env.baseUrl);
   repository = isIndexedDbAvailable()
-    ? new CachedCityRepository(chain, new IndexedDbStore('fmt-city-cache'))
-    : chain;
+    ? new CachedCityRepository(staticRepo, new IndexedDbStore('fmt-city-cache'))
+    : staticRepo;
   return repository;
 }
 

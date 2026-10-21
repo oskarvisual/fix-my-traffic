@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "cityId": "new_york",
+  "datasetVersion": 1,
+  "attribution": "© OpenStreetMap contributors · MTA New York City Transit",
+  "routes": [
+    {
+      "id": "mta-subway-1",
+      "name": "MTA Subway Line 1 (Broadway–7th Ave Local)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "1",
+      "colour": "#ee352e",
+      "lines": [
+        [
+          [
+            -73.955,
+            40.81
+          ],
+          [
+            -73.964,
+            40.798
+          ],
+          [
+            -73.974,
+            40.785
+          ],
+          [
+            -73.982,
+            40.772
+          ],
+          [
+            -73.982,
+            40.76
+          ],
+          [
+            -73.987,
+            40.752
+          ],
+          [
+            -73.991,
+            40.74
+          ],
+          [
+            -74.002,
+            40.725
+          ],
+          [
+            -74.012,
+            40.71
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "mta-subway-4",
+      "name": "MTA Subway Lines 4/5/6 (Lexington Ave Express/Local)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "4/5/6",
+      "colour": "#00933c",
+      "lines": [
+        [
+          [
+            -73.935,
+            40.805
+          ],
+          [
+            -73.952,
+            40.783
+          ],
+          [
+            -73.964,
+            40.768
+          ],
+          [
+            -73.977,
+            40.752
+          ],
+          [
+            -73.982,
+            40.74
+          ],
+          [
+            -73.989,
+            40.73
+          ],
+          [
+            -73.998,
+            40.72
+          ],
+          [
+            -74.004,
+            40.712
+          ],
+          [
+            -74.013,
+            40.704
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "mta-subway-a",
+      "name": "MTA Subway Lines A/C/E (8th Ave Express/Local)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "A/C/E",
+      "colour": "#0039a6",
+      "lines": [
+        [
+          [
+            -73.948,
+            40.81
+          ],
+          [
+            -73.958,
+            40.795
+          ],
+          [
+            -73.968,
+            40.78
+          ],
+          [
+            -73.985,
+            40.765
+          ],
+          [
+            -73.991,
+            40.755
+          ],
+          [
+            -73.995,
+            40.745
+          ],
+          [
+            -74.002,
+            40.735
+          ],
+          [
+            -74.007,
+            40.72
+          ],
+          [
+            -74.01,
+            40.71
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "mta-subway-7",
+      "name": "MTA Subway Line 7 (Flushing Local / Express)",
+      "mode": "subway",
+      "subterranean": true,
+      "ref": "7",
+      "colour": "#b933ad",
+      "lines": [
+        [
+          [
+            -74.002,
+            40.754
+          ],
+          [
+            -73.987,
+            40.752
+          ],
+          [
+            -73.978,
+            40.751
+          ],
+          [
+            -73.971,
+            40.748
+          ],
+          [
+            -73.955,
+            40.743
+          ],
+          [
+            -73.94,
+            40.745
+          ]
+        ]
+      ]
+    },
+    {
+      "id": "mta-bus-m15sbs",
+      "name": "M15-SBS (1st & 2nd Avenues Select Bus)",
+      "mode": "bus",
+      "ref": "M15",
+      "colour": "#0066b2",
+      "lines": [
+        [
+          [
+            -73.935,
+            40.8
+          ],
+          [
+            -73.95,
+            40.775
+          ],
+          [
+            -73.963,
+            40.755
+          ],
+          [
+            -73.975,
+            40.735
+          ],
+          [
+            -73.988,
+            40.715
+          ],
+          [
+            -74.01,
+            40.702
+          ]
+        ]
+      ]
+    }
+  ]
+}

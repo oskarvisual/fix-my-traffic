@@ -771,7 +771,7 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ backgroundColor: '#14241a', padding: '12px 16px', borderRadius: '8px', border: '1px solid #1e3325', fontSize: '12px', color: '#90a896', lineHeight: 1.5, textAlign: 'center' }}>
-                      💡 Real street geometry, transit routes, and primary avenues are processed in your browser and synced to Supabase.
+                      💡 Real street geometry, transit routes, and primary avenues are processed in your browser and saved to local storage.
                     </div>
                   </div>
                 ) : (
@@ -1042,7 +1042,7 @@ export default function App() {
         </a>
         <div className="city-name">
           {loadedCity.bundle.roads.city.name}, {loadedCity.bundle.roads.city.country}{' '}
-          <small>{loadedCity.bundle.roads.city.name} · Supabase Synced</small>
+          <small>{loadedCity.bundle.roads.city.name} · Real OSM Data</small>
         </div>
 
         <div className="metric">
