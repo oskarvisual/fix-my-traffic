@@ -50,6 +50,10 @@ export default function App() {
   const [draftIndices, setDraftIndices] = useState<number[]>([]);
   const [selectedBidIndex, setSelectedBidIndex] = useState<number>(0);
 
+  // Mobile App Navigation & Drawer States
+  const [mobileDrawer, setMobileDrawer] = useState<'none' | 'left' | 'right'>('none');
+  const [isEventFeedExpanded, setIsEventFeedExpanded] = useState<boolean>(false);
+
   // Freeform Subway Drafting State
   const [isDraftingSubway, setIsDraftingSubway] = useState(false);
   const [subwayDraftStations, setSubwayDraftStations] = useState<SubwayStationPoint[]>([]);
@@ -374,6 +378,9 @@ export default function App() {
     } else {
       setSelectedRoadIndices([index]);
       setRightPanelTab('inspector');
+      if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+        setMobileDrawer('right');
+      }
     }
   };
 
@@ -401,11 +408,15 @@ export default function App() {
           prev.length > 1 && avenueIndices.length > 1 && avenueIndices.every((i) => prev.includes(i));
         return isAlreadyFullAvenue ? [index] : avenueIndices;
       });
+      if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+        setMobileDrawer('right');
+      }
     }
   };
 
   const startDraftingType = (typeId: ProjectTypeId) => {
     setRightPanelTab('inspector');
+    setMobileDrawer('none');
     if (typeId === 'subway') {
       startDraftingSubway();
       return;
@@ -453,6 +464,7 @@ export default function App() {
 
   const startDraftingSubway = () => {
     setRightPanelTab('inspector');
+    setMobileDrawer('none');
     setIsDrafting(false);
     setDraftIndices([]);
     setIsDraftingSubway(true);
@@ -1183,6 +1195,52 @@ export default function App() {
         </div>
       </header>
 
+      {/* Mobile Top Navigation Bar: Projects drawer button, Layer switcher, Inspector drawer button */}
+      <div className="mobile-action-bar">
+        <button
+          className={`mobile-nav-btn ${mobileDrawer === 'left' ? 'active' : ''}`}
+          onClick={() => setMobileDrawer((curr) => (curr === 'left' ? 'none' : 'left'))}
+          aria-label="Toggle Infrastructure Projects Menu"
+        >
+          <span style={{ fontSize: '14px' }}>🛠️</span>
+          <span>Projects</span>
+        </button>
+
+        <div className="mobile-layer-switcher">
+          <button
+            className={mapLayerMode === 'surface' ? 'active' : ''}
+            onClick={() => setMapLayerMode('surface')}
+          >
+            ☀️ Surface
+          </button>
+          <button
+            className={`subterranean ${mapLayerMode === 'subterranean' ? 'active' : ''}`}
+            onClick={() => setMapLayerMode('subterranean')}
+          >
+            🚇 Metro
+          </button>
+        </div>
+
+        <button
+          className={`mobile-nav-btn ${mobileDrawer === 'right' ? 'active' : ''} ${selectedRoadIndices.length > 0 ? 'highlight' : ''}`}
+          onClick={() => setMobileDrawer((curr) => (curr === 'right' ? 'none' : 'right'))}
+          aria-label="Toggle Road Inspector Menu"
+        >
+          <span style={{ fontSize: '14px' }}>📊</span>
+          <span>Inspector</span>
+          {selectedRoadIndices.length > 0 && <span className="mobile-nav-dot" />}
+        </button>
+      </div>
+
+      {/* Mobile Drawer Backdrop */}
+      {mobileDrawer !== 'none' && (
+        <div
+          className="mobile-drawer-backdrop"
+          onClick={() => setMobileDrawer('none')}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Level Switcher (Surface vs Subterranean) */}
       <div className="map-layer-switcher">
         <button
@@ -1218,7 +1276,20 @@ export default function App() {
       />
 
       {/* Left Sidebar: Projects and Infrastructure Tools */}
-      <aside className="left-panel">
+      <aside className={`left-panel ${mobileDrawer === 'left' ? 'mobile-open' : 'mobile-closed'}`}>
+        <div className="mobile-drawer-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '15px' }}>🛠️</span>
+            <strong>Infrastructure Projects</strong>
+          </div>
+          <button
+            className="mobile-drawer-close"
+            onClick={() => setMobileDrawer('none')}
+            aria-label="Close Projects Menu"
+          >
+            ✕ Close
+          </button>
+        </div>
         <p className="eyebrow">{t('tools.title')}</p>
         <h2>{t('tools.title')}</h2>
 
@@ -1456,7 +1527,20 @@ export default function App() {
       </aside>
 
       {/* Right Sidebar: Contextual Info & Inspector / Draft Proposal */}
-      <aside className="right-panel">
+      <aside className={`right-panel ${mobileDrawer === 'right' ? 'mobile-open' : 'mobile-closed'}`}>
+        <div className="mobile-drawer-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '15px' }}>📊</span>
+            <strong>Inspector & Politics</strong>
+          </div>
+          <button
+            className="mobile-drawer-close"
+            onClick={() => setMobileDrawer('none')}
+            aria-label="Close Inspector Menu"
+          >
+            ✕ Close
+          </button>
+        </div>
         {/* Tab switcher: News & Opinion vs Road Inspector */}
         <div
           style={{
@@ -2694,17 +2778,44 @@ export default function App() {
       )}
 
       {/* Bottom Briefing / News Feed (Ministry Intelligence) */}
-      <section className="event-feed">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <p className="eyebrow" style={{ margin: 0 }}>Ministerial Desk · Intelligence Feed</p>
-          <small style={{ color: '#6ee7b7', fontSize: '10px' }}>Live</small>
+      <section className={`event-feed ${isEventFeedExpanded ? 'mobile-expanded' : 'mobile-collapsed'}`}>
+        <div
+          className="event-feed-header"
+          onClick={() => setIsEventFeedExpanded((v) => !v)}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isEventFeedExpanded}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', flex: 1 }}>
+            <span style={{ fontSize: '13px', flexShrink: 0 }}>📰</span>
+            <p className="eyebrow" style={{ margin: 0, whiteSpace: 'nowrap' }}>Ministerial Desk · Intelligence Feed</p>
+            <small style={{ color: '#6ee7b7', fontSize: '10px', flexShrink: 0 }}>● Live</small>
+            {!isEventFeedExpanded && state.news.length > 0 && (
+              <span className="mobile-feed-snippet" style={{ color: '#90a896', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginLeft: '6px' }}>
+                {t(state.news[0].key as string, state.news[0].params)}
+              </span>
+            )}
+          </div>
+          <button
+            className="event-feed-toggle-btn"
+            aria-label={isEventFeedExpanded ? 'Collapse Intelligence Feed' : 'Expand Intelligence Feed'}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEventFeedExpanded((v) => !v);
+            }}
+          >
+            {isEventFeedExpanded ? '▼' : '▲'}
+          </button>
         </div>
-        {state.news.slice(0, 3).map((item) => (
-          <p className={`event ${item.severity}`} key={item.id}>
-            <span>●</span>
-            {t(item.key as string, item.params)}
-          </p>
-        ))}
+        <div className="event-feed-body">
+          {state.news.slice(0, 3).map((item) => (
+            <p className={`event ${item.severity}`} key={item.id}>
+              <span>●</span>
+              {t(item.key as string, item.params)}
+            </p>
+          ))}
+        </div>
       </section>
 
       {/* Interactive Mayor Induction & Game Tutorial Modal */}
