@@ -119,12 +119,12 @@
   }
 }
 
-/* GitHub repository map badge - positioned directly above MapLibre attribution */
+/* GitHub repository map badge - positioned cleanly above MapLibre attribution and across title/city views */
 .github-map-badge {
-  position: absolute;
-  right: 8px;
-  bottom: 24px;
-  z-index: 5;
+  position: fixed;
+  right: 12px;
+  bottom: 36px;
+  z-index: 50;
   display: inline-flex;
   align-items: center;
   gap: 6px;

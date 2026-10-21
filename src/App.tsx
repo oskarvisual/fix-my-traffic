@@ -25,6 +25,7 @@ import type { NewsItem } from './simulation/state';
 import { getAllCities, findCity, type CityCatalogEntry } from './data/cityCatalog';
 import { searchOsmCities, importCity, type OsmCitySearchResult } from './data/cityImporter';
 import { TutorialModal } from './components/TutorialModal';
+import { GitHubBadge } from './components/GitHubBadge';
 import { getAssetUrl } from './config/env';
 
 export default function App() {
@@ -511,6 +512,7 @@ export default function App() {
         </button>
         {resumeError && <p className="load-error">{t('city.loadError', { error: resumeError })}</p>}
         <p className="disclaimer">{t('app.simulatedDisclaimer')}</p>
+        <GitHubBadge />
       </main>
     );
   }
@@ -1002,6 +1004,7 @@ export default function App() {
             </div>
           </div>
         )}
+        <GitHubBadge />
       </main>
     );
   }
