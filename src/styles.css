@@ -271,6 +271,10 @@
   .event-feed.mobile-collapsed {
     cursor: pointer;
   }
+  .event-feed.mobile-expanded {
+    z-index: 70 !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.85) !important;
+  }
   .event-feed.mobile-expanded .event-feed-body {
     display: block !important;
     margin-top: 10px !important;
@@ -281,6 +285,17 @@
   }
   .mobile-feed-snippet {
     display: inline !important;
+  }
+
+  /* GitHub badge on mobile: positioned cleanly above the collapsed intelligence feed */
+  .github-map-badge {
+    bottom: 66px !important;
+    z-index: 50 !important;
+  }
+
+  /* Map zoom controls on mobile: elevated so they do not collide with bottom bar */
+  .maplibregl-ctrl-bottom-left {
+    bottom: 60px !important;
   }
 }
 .map-layer-switcher{position:absolute;top:80px;left:315px;z-index:10;display:flex;background:#0d1612e6;border:1px solid #2d3c30;border-radius:4px;padding:3px;backdrop-filter:blur(8px);gap:4px}
