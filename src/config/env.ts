@@ -11,6 +11,13 @@ export const env: AppEnv = {
   baseUrl: import.meta.env.BASE_URL ?? '/',
 };
 
+/** Prepend baseUrl (e.g. /fix-my-traffic/ on GitHub Pages) to public static assets. */
+export function getAssetUrl(path: string): string {
+  const base = env.baseUrl.replace(/\/$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${cleanPath}`;
+}
+
 /** Debug features (turbo time) are available in dev builds or with ?debug=1. */
 export function isDebugEnabled(): boolean {
   if (import.meta.env.DEV) return true;

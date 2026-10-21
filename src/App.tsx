@@ -25,6 +25,7 @@ import type { NewsItem } from './simulation/state';
 import { getAllCities, findCity, type CityCatalogEntry } from './data/cityCatalog';
 import { searchOsmCities, importCity, type OsmCitySearchResult } from './data/cityImporter';
 import { TutorialModal } from './components/TutorialModal';
+import { getAssetUrl } from './config/env';
 
 export default function App() {
   const [screen, setScreen] = useState<'title' | 'city' | 'loading' | 'game'>('title');
@@ -2360,7 +2361,7 @@ export default function App() {
             {/* TV Screen with Photo & Lower-Third Chyron */}
             <div style={{ position: 'relative', width: '100%', height: '320px', backgroundColor: '#000', overflow: 'hidden' }}>
               <img
-                src="/assets/congressman.png"
+                src={getAssetUrl('/assets/congressman.png')}
                 alt="Live broadcast"
                 style={{
                   width: '100%',

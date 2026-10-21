@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getAssetUrl } from '../config/env';
 
 export interface TutorialModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({
       badge: 'OFFICIAL APPOINTMENT · CITY HALL CEREMONY',
       title: `New Mayor ${playerName} Takes Office`,
       subtitle: `Appointed as Supreme Transportation Authority of ${cityName}`,
-      imageSrc: '/assets/congressman.png',
+      imageSrc: getAssetUrl('/assets/congressman.png'),
       placeholderLabel: 'Official Press Induction Capture',
       placeholderFilename: 'congressman.png',
       bullets: [
@@ -69,7 +70,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({
       badge: 'TUTORIAL 1/4 · MAP NAVIGATION',
       title: 'Inspect Roads & Traffic Bottlenecks',
       subtitle: 'Locate critical traffic jams and diagnose corridor capacity',
-      imageSrc: '/assets/tutorial/step1-inspector.png',
+      imageSrc: getAssetUrl('/assets/tutorial/step1-inspector.png'),
       placeholderLabel: 'Screenshot: Road Traffic Inspector & Avenue Selection',
       placeholderFilename: 'step1-inspector.png',
       bullets: [
@@ -96,7 +97,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({
       badge: 'TUTORIAL 2/4 · PUBLIC WORKS',
       title: 'Draft Projects & Tender Public Works',
       subtitle: 'Transform road corridors with BRT, bike lanes, and additional capacity',
-      imageSrc: '/assets/tutorial/step2-projects.png',
+      imageSrc: getAssetUrl('/assets/tutorial/step2-projects.png'),
       placeholderLabel: 'Screenshot: Project Tools & Contractor Bidding Card',
       placeholderFilename: 'step2-projects.png',
       bullets: [
@@ -123,7 +124,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({
       badge: 'TUTORIAL 3/4 · METRO EXPANSION',
       title: 'Build Underground Subway Lines',
       subtitle: 'Design custom subterranean metro routes beneath the city',
-      imageSrc: '/assets/tutorial/step3-subway.png',
+      imageSrc: getAssetUrl('/assets/tutorial/step3-subway.png'),
       placeholderLabel: 'Screenshot: Subterranean Mode & Placing Subway Stations',
       placeholderFilename: 'step3-subway.png',
       bullets: [
@@ -150,7 +151,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({
       badge: 'TUTORIAL 4/4 · POLITICAL SURVIVAL',
       title: 'Politics, Approval & Public Opinion',
       subtitle: 'Survive term elections without being ousted or impeached',
-      imageSrc: '/assets/tutorial/step4-politics.png',
+      imageSrc: getAssetUrl('/assets/tutorial/step4-politics.png'),
       placeholderLabel: 'Screenshot: Opinion Barometer, Term Clock & Breaking News',
       placeholderFilename: 'step4-politics.png',
       bullets: [

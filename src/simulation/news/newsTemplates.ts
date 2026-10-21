@@ -1,4 +1,5 @@
 import type { NewsItem, NewsSeverity } from '../state';
+import { getAssetUrl } from '../../config/env';
 
 export interface NewsTemplateContext {
   playerName: string;
@@ -114,7 +115,7 @@ export function buildRichNewsItem(
           speaker: 'CONG. VICTOR BUSTAMANTE · TRANSPORTATION COMMITTEE',
           chyronHeadline: `WE DEMAND THE RESIGNATION OF ${name.toUpperCase()}: TRAFFIC GRIDLOCK HAS PARALYZED THE CITY`,
           chyronColor: 'red',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Approve urgent transit relief and infrastructure projects immediately to avert congressional censure.',
         },
       };
@@ -136,7 +137,7 @@ export function buildRichNewsItem(
           speaker: 'CONGRESSIONAL PLENARY · CENSURE MOTION PASSED',
           chyronHeadline: `IMPEACHED: PARLIAMENT REMOVES MINISTER ${name.toUpperCase()} FROM OFFICE`,
           chyronColor: 'red',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Ministerial mandate has terminated due to political destitution.',
         },
       };
@@ -191,7 +192,7 @@ export function buildRichNewsItem(
           speaker: 'CONG. VICTOR BUSTAMANTE · EMERGENCY STATEMENT',
           chyronHeadline: `CITYWIDE CRISIS: CONGRESS SUMMONS ${name.toUpperCase()} OVER RECORD GRIDLOCK`,
           chyronColor: 'red',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Approve mass transit projects immediately and clear blocked thoroughfares.',
         },
       };
@@ -260,7 +261,7 @@ export function buildRichNewsItem(
           speaker: 'OFFICIAL INAUGURAL ADDRESS · TRANSPORTATION MINISTER',
           chyronHeadline: `HISTORIC EXPANSION: ${name.toUpperCase()} CUTS RIBBON ON NEW UNDERGROUND METRO`,
           chyronColor: 'blue',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Celebrate the achievement and continue expanding the metropolitan mass transit network.',
         },
       };
@@ -327,7 +328,7 @@ export function buildRichNewsItem(
           speaker: 'DR. CARLOS ALFARO · SPECIAL ANTI-CORRUPTION PROSECUTOR',
           chyronHeadline: `PROSECUTOR OPENS PROBE INTO ALLEGED KICKBACKS IN CONTRACTS OF ${name.toUpperCase()}`,
           chyronColor: 'red',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Cooperate transparently with prosecutors and audit all active contracts.',
         },
       };
@@ -349,7 +350,7 @@ export function buildRichNewsItem(
           speaker: 'NATIONAL POLICE · JUDICIAL ENFORCEMENT DESK',
           chyronHeadline: `AUTHORITIES ARREST ${name.toUpperCase()} ON SEVERE BRIBERY & CORRUPTION CHARGES`,
           chyronColor: 'red',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Ministerial mandate has terminated following judicial arrest.',
         },
       };
@@ -386,7 +387,7 @@ export function buildRichNewsItem(
           speaker: 'ELECTORAL COMMISSION · OFFICIAL RESULTS',
           chyronHeadline: `ELECTORAL MANDATE RENEWED: ${name.toUpperCase()} WINS NEW FIVE-YEAR TERM`,
           chyronColor: 'blue',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Commence the new five-year mandate with renewed momentum.',
         },
       };
@@ -408,7 +409,7 @@ export function buildRichNewsItem(
           speaker: 'ELECTORAL BROADCAST · ELECTION NIGHT',
           chyronHeadline: `VOTERS REJECT INCUMBENT TRANSIT RECORD: ${name.toUpperCase()} OUSTED`,
           chyronColor: 'red',
-          image: '/assets/congressman.png',
+          image: getAssetUrl('/assets/congressman.png'),
           urgentActionPrompt: 'Ministerial mandate has concluded via general election defeat.',
         },
       };
