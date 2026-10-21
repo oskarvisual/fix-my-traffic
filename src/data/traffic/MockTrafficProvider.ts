@@ -98,9 +98,9 @@ export function generateMockBaseline(network: RoadNetwork, profile: MockCityProf
     vc *= 1 + Math.min(0.45, centrality);
     const name = normalize(seg.name);
     if (name && profile.corridorPatterns.some((p) => name.includes(p))) vc *= profile.corridorBoost;
-    const streetKey = name || seg.id.split('-')[0];
+    const streetKey = name || String(seg.id).split('-')[0];
     vc *= 0.88 + 0.24 * randomFor(seed, `street:${streetKey}`);
-    vc *= 0.94 + 0.12 * randomFor(seed, `seg:${seg.id}`);
+    vc *= 0.94 + 0.12 * randomFor(seed, `seg:${String(seg.id)}`);
     return Math.round(vc * seg.baseCapacity);
   });
 }

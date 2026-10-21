@@ -4,6 +4,7 @@ import { getCityJurisdiction, registerCustomJurisdiction } from '../src/data/jur
 
 import { createNewGame } from '../src/simulation/game';
 import { buildRoadNetwork } from '../src/simulation/traffic/network';
+import { MockTrafficProvider } from '../src/data/traffic/MockTrafficProvider';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -54,7 +55,7 @@ describe('Multi-City Catalog & Datasets', () => {
     }
   });
 
-  it('has valid roads.json and transit.json on disk for each city with thousands of real streets', () => {
+  it('has valid roads.json and transit.json on disk for each city with thousands of real streets', async () => {
     for (const city of CITY_CATALOG) {
       const v = city.latestDatasetVersion;
       const roadsPath = path.join(process.cwd(), `public/data/cities/${city.id}/v${v}/roads.json`);
@@ -75,6 +76,11 @@ describe('Multi-City Catalog & Datasets', () => {
       const network = buildRoadNetwork(roads);
       expect(network.segments.length).toBe(roads.segments.length);
 
+      // Verify traffic provider baseline can be generated with real segment IDs
+      const provider = new MockTrafficProvider(network, 12345);
+      const traffic = await provider.getTrafficData(city.id);
+      expect(traffic.baselineDemandVph.length).toBe(network.segments.length);
+
       // Verify createNewGame initializes state with the city's initial budget
       const state = createNewGame(
         {
@@ -83,7 +89,7 @@ describe('Multi-City Catalog & Datasets', () => {
           trafficProviderId: 'mock',
           seed: 12345,
         },
-        { network, baselineDemand: new Array(network.segments.length).fill(600) },
+        { network, baselineDemand: traffic.baselineDemandVph },
       );
 
       expect(state.cityId).toBe(city.id);

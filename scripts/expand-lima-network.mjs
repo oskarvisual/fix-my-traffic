@@ -26,6 +26,9 @@ function wayLengthM(coords) {
 const v2Path = path.join(process.cwd(), 'public/data/cities/lima/v2/roads.json');
 const dataset = JSON.parse(fs.readFileSync(v2Path, 'utf8'));
 
+// Filter out any previous malformed segments where s[0] is not a string ID
+dataset.segments = dataset.segments.filter((s) => typeof s[0] === 'string');
+
 console.log(`Initial Lima dataset: ${dataset.segments.length} segments, ${dataset.nodes.length} nodes, ${dataset.names.length} names.`);
 
 const names = [...dataset.names];
@@ -313,21 +316,24 @@ for (const c of NEW_CORRIDORS) {
     const segCoords = [ptA, ptB];
     const lengthM = wayLengthM(segCoords);
 
-    // [nameIdx, fromNode, toNode, roadType, lanes, maxSpeed, lengthM, isOneWay, layer, coords, alts, twins, isLink]
+    const segId = `exp-${addedCount}`;
+
+    // Tuple layout:
+    // [id, nameIdx, typeIdx, lanes, speedKph, oneway, lengthM, fromNode, toNode, coordinates, alternatives, twins, isLink]
     segments.push([
+      segId,
       nameIdx,
-      nodeA,
-      nodeB,
       c.type,
       c.lanes,
       c.speed,
+      0, // oneway: two-way
       lengthM,
-      false, // two-way
-      0,
+      nodeA,
+      nodeB,
       segCoords,
       [],
       [],
-      false,
+      0, // isLink: false
     ]);
     addedCount++;
   }
